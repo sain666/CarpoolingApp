@@ -1,0 +1,48 @@
+<!-- File: CarpoolingApp/app/src/main/res/values/colors.xml -->
+
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary Colors -->
+    <color name="primary_blue">#6B8FAF</color>
+    <color name="primary_blue_dark">#5A7A96</color>
+    <color name="primary_pink">#D4A5A5</color>
+    <color name="primary_green">#A5C9B8</color>
+
+    <!-- Background Colors -->
+    <color name="background_light">#F5F5F5</color>
+    <color name="background_white">#FFFFFF</color>
+    <color name="background_blue">#6B8FAF</color>
+    <color name="background_pink">#D4A5A5</color>
+    <color name="background_green">#A5C9B8</color>
+
+    <!-- Text Colors -->
+    <color name="text_primary">#212121</color>
+    <color name="text_secondary">#757575</color>
+    <color name="text_white">#FFFFFF</color>
+    <color name="text_hint">#9E9E9E</color>
+
+    <!-- Button Colors -->
+    <color name="button_primary">#6B8FAF</color>
+    <color name="button_secondary">#D4A5A5</color>
+    <color name="button_disabled">#BDBDBD</color>
+
+    <!-- Status Colors -->
+    <color name="status_active">#4CAF50</color>
+    <color name="status_inactive">#9E9E9E</color>
+    <color name="status_warning">#FF9800</color>
+    <color name="status_error">#F44336</color>
+
+    <!-- Other Colors -->
+    <color name="divider">#E0E0E0</color>
+    <color name="overlay">#80000000</color>
+    <color name="transparent">#00000000</color>
+
+    <!-- Material Design Colors -->
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+</resources>

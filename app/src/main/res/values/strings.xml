@@ -1,0 +1,98 @@
+<!-- File: CarpoolingApp/app/src/main/res/values/strings.xml -->
+
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">CarpoolingApp</string>
+
+    <!-- Common -->
+    <string name="hello">Hello,</string>
+    <string name="user">User</string>
+    <string name="search">Search</string>
+    <string name="cancel">Cancel</string>
+    <string name="confirm">Confirm</string>
+    <string name="save">Save</string>
+    <string name="delete">Delete</string>
+    <string name="back">Back</string>
+    <string name="next">Next</string>
+    <string name="done">Done</string>
+
+    <!-- Authentication -->
+    <string name="login">Login</string>
+    <string name="register">Register</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="forgot_password">Forgot Password?</string>
+    <string name="dont_have_account">Don\'t have an account? Sign up</string>
+    <string name="already_have_account">Already have an account? Login</string>
+
+    <!-- Home -->
+    <string name="your_bookings">Your Bookings</string>
+    <string name="your_listings">Your Listings</string>
+    <string name="where_to">Where to?</string>
+
+    <!-- Ride Creation -->
+    <string name="create_your_ride">Create your ride</string>
+    <string name="from">From</string>
+    <string name="to">To</string>
+    <string name="date">Date</string>
+    <string name="time">Time</string>
+    <string name="passengers">Passengers</string>
+    <string name="price">Price</string>
+
+    <!-- Payment -->
+    <string name="payment">Payment</string>
+    <string name="payment_method">Payment Method</string>
+    <string name="credit_card">Credit Card</string>
+    <string name="debit_card">Debit Card</string>
+    <string name="card_information">Card Information</string>
+    <string name="order_total">Order Total</string>
+    <string name="make_payment">Make Payment</string>
+
+    <!-- Booking -->
+    <string name="ride_confirmed">Ride Confirmed!</string>
+    <string name="booking_cancelled">Booking Cancelled!</string>
+    <string name="find_your_ride">Find your ride on map</string>
+    <string name="back_to_home">Back to Home</string>
+    <string name="view_your_booking">View your booking</string>
+    <string name="skip_to_home">Skip to home</string>
+    <string name="cancel_booking">Cancel Booking</string>
+
+    <!-- Listing -->
+    <string name="ride_created">Ride Created!</string>
+    <string name="listing_removed">Listing Removed!</string>
+    <string name="save_to_listing">Save to listing</string>
+    <string name="remove_listing">Remove Listing?</string>
+
+    <!-- Chat -->
+    <string name="messages">Messages</string>
+    <string name="type_message">Type a message...</string>
+
+    <!-- Rating -->
+    <string name="rate_your_ride">Rate your ride</string>
+    <string name="rate_your_driver">Rate your driver</string>
+    <string name="how_was_your_ride">How was your ride?</string>
+    <string name="how_was_your_driver">How was your driver?</string>
+    <string name="write_your_review">Write your review</string>
+    <string name="submit">Submit</string>
+    <string name="review_submitted">Review submitted!</string>
+    <string name="thank_you_feedback">Thank you for your feedback!</string>
+
+    <!-- Completion -->
+    <string name="ride_completed">Ride Completed!</string>
+    <string name="drive_completed">Drive Completed!</string>
+    <string name="find_your_rider">Find your rider on map</string>
+    <string name="rate_your_rider">Rate your rider</string>
+
+    <!-- Profile -->
+    <string name="profile">Profile</string>
+    <string name="rider">Rider</string>
+    <string name="driver">Driver</string>
+    <string name="switch_mode">Switch to %s mode</string>
+
+    <!-- Error Messages -->
+    <string name="error_empty_fields">Please fill all fields</string>
+    <string name="error_invalid_email">Invalid email address</string>
+    <string name="error_short_password">Password must be at least 6 characters</string>
+    <string name="error_login_failed">Login failed. Please try again</string>
+    <string name="error_register_failed">Registration failed. Please try again</string>
+</resources>
