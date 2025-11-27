@@ -1,5 +1,3 @@
-// File: CarpoolingApp/app/src/main/java/com/carpooling/app/activities/BookingManagementActivity.java
-
 package com.carpoolingapp.activities;
 
 import android.os.Bundle;
