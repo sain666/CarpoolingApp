@@ -18,6 +18,7 @@ public class Ride {
     private String status; // "active", "completed", "cancelled"
     private long createdAt;
     private long updatedAt;
+    private String rideType; // "hosting" or "looking"
 
     // Default constructor required for Firebase
     public Ride() {
@@ -25,7 +26,7 @@ public class Ride {
 
     public Ride(String driverId, String driverName, String fromLocation, String toLocation,
                 double fromLat, double fromLng, double toLat, double toLng,
-                String date, String time, int availableSeats, double pricePerSeat) {
+                String date, String time, int availableSeats, double pricePerSeat, String rideType) {
         this.driverId = driverId;
         this.driverName = driverName;
         this.fromLocation = fromLocation;
@@ -38,6 +39,7 @@ public class Ride {
         this.time = time;
         this.availableSeats = availableSeats;
         this.pricePerSeat = pricePerSeat;
+        this.rideType = rideType;
         this.status = "active";
         this.createdAt = System.currentTimeMillis();
         this.updatedAt = System.currentTimeMillis();
@@ -170,5 +172,13 @@ public class Ride {
 
     public void setUpdatedAt(long updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getRideType() {
+        return rideType;
+    }
+
+    public void setRideType(String rideType) {
+        this.rideType = rideType;
     }
 }

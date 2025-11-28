@@ -24,8 +24,8 @@
     <string name="already_have_account">Already have an account? Login</string>
 
     <!-- Home -->
-    <string name="your_bookings">Your Bookings</string>
-    <string name="your_listings">Your Listings</string>
+    <string name="your_bookings">My Bookings</string>
+    <string name="your_listings">My Listings</string>
     <string name="where_to">Where to?</string>
 
     <!-- Ride Creation -->

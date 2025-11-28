@@ -9,8 +9,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.carpoolingapp.R;
-import com.carpoolingapp.adapters.BookingAdapter;
-import com.carpoolingapp.models.Booking;
+import com.carpoolingapp.adapters.RideAdapter;
+import com.carpoolingapp.models.Ride;
 import com.carpoolingapp.utils.FirebaseHelper;
 import com.carpoolingapp.utils.SharedPrefsHelper;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -24,17 +24,17 @@ import java.util.List;
 public class HomeActivity extends AppCompatActivity {
 
     private TextView userNameText, sectionTitle;
-    private MaterialButton riderModeButton, driverModeButton;
+    private MaterialButton myBookingsButton, myListingsButton;
     private RecyclerView recyclerView;
-    private View emptyState;
+    private View emptyState, searchCard;
     private BottomNavigationView bottomNav;
 
     private FirebaseHelper firebaseHelper;
     private SharedPrefsHelper prefsHelper;
-    private BookingAdapter adapter;
-    private List<Booking> bookingList;
+    private RideAdapter adapter;
+    private List<Ride> rideList;
 
-    private boolean isRiderMode = true;
+    private boolean isBookingsMode = true; // true = My Bookings, false = My Listings
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,17 +47,18 @@ public class HomeActivity extends AppCompatActivity {
         setupBottomNav();
         loadUserData();
         setupRecyclerView();
-        loadBookings();
+        loadRides();
     }
 
     private void initViews() {
         userNameText = findViewById(R.id.userNameText);
         sectionTitle = findViewById(R.id.sectionTitle);
-        riderModeButton = findViewById(R.id.riderModeButton);
-        driverModeButton = findViewById(R.id.driverModeButton);
+        myBookingsButton = findViewById(R.id.myBookingsButton);
+        myListingsButton = findViewById(R.id.myListingsButton);
         recyclerView = findViewById(R.id.recyclerView);
         emptyState = findViewById(R.id.emptyState);
         bottomNav = findViewById(R.id.bottomNav);
+        searchCard = findViewById(R.id.searchCard);
     }
 
     private void initFirebase() {
@@ -66,24 +67,26 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void setupListeners() {
-        riderModeButton.setOnClickListener(new View.OnClickListener() {
+        myBookingsButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                switchToRiderMode();
+                switchToBookingsMode();
             }
         });
 
-        driverModeButton.setOnClickListener(new View.OnClickListener() {
+        myListingsButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                switchToDriverMode();
+                switchToListingsMode();
             }
         });
 
-        findViewById(R.id.searchCard).setOnClickListener(new View.OnClickListener() {
+        searchCard.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(HomeActivity.this, "Search feature coming soon", Toast.LENGTH_SHORT).show();
+                // Open search form activity
+                Intent intent = new Intent(HomeActivity.this, SearchFormActivity.class);
+                startActivity(intent);
             }
         });
 
@@ -102,14 +105,35 @@ public class HomeActivity extends AppCompatActivity {
             if (itemId == R.id.nav_home) {
                 return true;
             } else if (itemId == R.id.nav_create) {
-                startActivity(new Intent(HomeActivity.this, CreateRideActivity.class));
-                return true;
+                try {
+                    Intent intent = new Intent(HomeActivity.this, CreateRideActivity.class);
+                    startActivity(intent);
+                    return true;
+                } catch (Exception e) {
+                    Toast.makeText(HomeActivity.this, "Error opening Create Ride", Toast.LENGTH_SHORT).show();
+                    e.printStackTrace();
+                    return false;
+                }
             } else if (itemId == R.id.nav_messages) {
-                startActivity(new Intent(HomeActivity.this, MessagesActivity.class));
-                return true;
+                try {
+                    Intent intent = new Intent(HomeActivity.this, MessagesActivity.class);
+                    startActivity(intent);
+                    return true;
+                } catch (Exception e) {
+                    Toast.makeText(HomeActivity.this, "Error opening Messages", Toast.LENGTH_SHORT).show();
+                    e.printStackTrace();
+                    return false;
+                }
             } else if (itemId == R.id.nav_profile) {
-                startActivity(new Intent(HomeActivity.this, ProfileActivity.class));
-                return true;
+                try {
+                    Intent intent = new Intent(HomeActivity.this, ProfileActivity.class);
+                    startActivity(intent);
+                    return true;
+                } catch (Exception e) {
+                    Toast.makeText(HomeActivity.this, "Error opening Profile", Toast.LENGTH_SHORT).show();
+                    e.printStackTrace();
+                    return false;
+                }
             }
             return false;
         });
@@ -121,11 +145,11 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void setupRecyclerView() {
-        bookingList = new ArrayList<>();
-        adapter = new BookingAdapter(this, bookingList, new BookingAdapter.OnBookingClickListener() {
+        rideList = new ArrayList<>();
+        adapter = new RideAdapter(this, rideList, new RideAdapter.OnRideClickListener() {
             @Override
-            public void onBookingClick(Booking booking) {
-                Toast.makeText(HomeActivity.this, "Booking details coming soon", Toast.LENGTH_SHORT).show();
+            public void onRideClick(Ride ride) {
+                Toast.makeText(HomeActivity.this, "Ride: " + ride.getFromLocation() + " to " + ride.getToLocation(), Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -133,76 +157,113 @@ public class HomeActivity extends AppCompatActivity {
         recyclerView.setAdapter(adapter);
     }
 
-    private void switchToRiderMode() {
-        isRiderMode = true;
+    private void switchToBookingsMode() {
+        isBookingsMode = true;
         updateModeUI();
-        loadBookings();
+        loadRides();
     }
 
-    private void switchToDriverMode() {
-        isRiderMode = false;
+    private void switchToListingsMode() {
+        isBookingsMode = false;
         updateModeUI();
-        loadBookings();
+        loadRides();
     }
 
     private void updateModeUI() {
-        if (isRiderMode) {
-            riderModeButton.setBackgroundTintList(getColorStateList(R.color.status_active));
-            riderModeButton.setTextColor(getColor(R.color.white));
-            driverModeButton.setBackgroundTintList(null);
-            driverModeButton.setTextColor(getColor(R.color.primary_blue));
+        if (isBookingsMode) {
+            myBookingsButton.setBackgroundTintList(getColorStateList(R.color.status_active));
+            myBookingsButton.setTextColor(getColor(R.color.white));
+            myListingsButton.setBackgroundTintList(null);
+            myListingsButton.setTextColor(getColor(R.color.primary_blue));
             sectionTitle.setText(R.string.your_bookings);
         } else {
-            driverModeButton.setBackgroundTintList(getColorStateList(R.color.status_active));
-            driverModeButton.setTextColor(getColor(R.color.white));
-            riderModeButton.setBackgroundTintList(null);
-            riderModeButton.setTextColor(getColor(R.color.primary_blue));
+            myListingsButton.setBackgroundTintList(getColorStateList(R.color.status_active));
+            myListingsButton.setTextColor(getColor(R.color.white));
+            myBookingsButton.setBackgroundTintList(null);
+            myBookingsButton.setTextColor(getColor(R.color.primary_blue));
             sectionTitle.setText(R.string.your_listings);
         }
     }
 
-    private void loadBookings() {
+    private void loadRides() {
         String userId = prefsHelper.getUserId();
         if (userId == null) return;
 
-        firebaseHelper.getBookingsRef()
-                .orderByChild(isRiderMode ? "riderId" : "driverId")
-                .equalTo(userId)
-                .addValueEventListener(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        bookingList.clear();
-                        for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                            Booking booking = snapshot.getValue(Booking.class);
-                            if (booking != null) {
-                                booking.setBookingId(snapshot.getKey());
-                                bookingList.add(booking);
+        if (isBookingsMode) {
+            // My Bookings: Show rides where I'm looking for a ride (rideType = "looking")
+            firebaseHelper.getRidesRef()
+                    .orderByChild("driverId")
+                    .equalTo(userId)
+                    .addValueEventListener(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            rideList.clear();
+                            for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                                Ride ride = snapshot.getValue(Ride.class);
+                                if (ride != null && "looking".equals(ride.getRideType())) {
+                                    ride.setRideId(snapshot.getKey());
+                                    rideList.add(ride);
+                                }
+                            }
+
+                            adapter.notifyDataSetChanged();
+
+                            if (rideList.isEmpty()) {
+                                emptyState.setVisibility(View.VISIBLE);
+                                recyclerView.setVisibility(View.GONE);
+                            } else {
+                                emptyState.setVisibility(View.GONE);
+                                recyclerView.setVisibility(View.VISIBLE);
                             }
                         }
 
-                        adapter.notifyDataSetChanged();
-
-                        if (bookingList.isEmpty()) {
-                            emptyState.setVisibility(View.VISIBLE);
-                            recyclerView.setVisibility(View.GONE);
-                        } else {
-                            emptyState.setVisibility(View.GONE);
-                            recyclerView.setVisibility(View.VISIBLE);
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+                            Toast.makeText(HomeActivity.this, "Failed to load bookings", Toast.LENGTH_SHORT).show();
                         }
-                    }
+                    });
+        } else {
+            // My Listings: Show rides where I'm hosting (rideType = "hosting")
+            firebaseHelper.getRidesRef()
+                    .orderByChild("driverId")
+                    .equalTo(userId)
+                    .addValueEventListener(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            rideList.clear();
+                            for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                                Ride ride = snapshot.getValue(Ride.class);
+                                if (ride != null && "hosting".equals(ride.getRideType())) {
+                                    ride.setRideId(snapshot.getKey());
+                                    rideList.add(ride);
+                                }
+                            }
 
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-                        Toast.makeText(HomeActivity.this,
-                                "Failed to load bookings",
-                                Toast.LENGTH_SHORT).show();
-                    }
-                });
+                            adapter.notifyDataSetChanged();
+
+                            if (rideList.isEmpty()) {
+                                emptyState.setVisibility(View.VISIBLE);
+                                recyclerView.setVisibility(View.GONE);
+                            } else {
+                                emptyState.setVisibility(View.GONE);
+                                recyclerView.setVisibility(View.VISIBLE);
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+                            Toast.makeText(HomeActivity.this, "Failed to load listings", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        bottomNav.setSelectedItemId(R.id.nav_home);
+        if (bottomNav != null) {
+            bottomNav.setSelectedItemId(R.id.nav_home);
+        }
+        loadRides();
     }
 }

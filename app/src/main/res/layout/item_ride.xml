@@ -13,24 +13,19 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Status Badge -->
+        <!-- Price and Seats -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
             <TextView
-                android:id="@+id/statusBadge"
+                android:id="@+id/priceText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_status_badge"
-                android:paddingStart="12dp"
-                android:paddingTop="4dp"
-                android:paddingEnd="12dp"
-                android:paddingBottom="4dp"
-                android:text="Active"
-                android:textColor="@color/white"
-                android:textSize="12sp"
+                android:text="$45"
+                android:textColor="@color/text_primary"
+                android:textSize="20sp"
                 android:textStyle="bold" />
 
             <Space
@@ -39,13 +34,12 @@
                 android:layout_weight="1" />
 
             <TextView
-                android:id="@+id/priceText"
+                android:id="@+id/seatsText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="$45"
-                android:textColor="@color/text_primary"
-                android:textSize="18sp"
-                android:textStyle="bold" />
+                android:text="2 seats"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
 
         </LinearLayout>
 
@@ -151,39 +145,29 @@
 
         </LinearLayout>
 
-        <!-- Driver/Rider Info -->
+        <!-- Driver Info -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:orientation="horizontal">
 
-            <de.hdodenhof.circleimageview.CircleImageView
-                android:id="@+id/userImage"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:src="@android:drawable/ic_menu_myplaces" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Driver: "
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp" />
 
             <TextView
-                android:id="@+id/userNameText"
+                android:id="@+id/driverNameText"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical"
-                android:layout_marginStart="8dp"
                 android:layout_weight="1"
                 android:text="Driver Name"
                 android:textColor="@color/text_primary"
-                android:textSize="14sp"
+                android:textSize="12sp"
                 android:textStyle="bold" />
-
-            <ImageView
-                android:id="@+id/chatIcon"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_gravity="center_vertical"
-                android:src="@android:drawable/ic_menu_send"
-                android:contentDescription="Chat"
-                app:tint="@color/primary_blue" />
 
         </LinearLayout>
 

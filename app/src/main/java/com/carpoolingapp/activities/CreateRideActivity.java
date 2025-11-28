@@ -25,6 +25,7 @@ public class CreateRideActivity extends AppCompatActivity {
     private EditText fromEditText, toEditText, seatsEditText, priceEditText;
     private TextView dateText, timeText;
     private MaterialButton createRideButton;
+    private MaterialButton lookingForRideButton, hostingRideButton;
     private View dateLayout, timeLayout;
     private BottomNavigationView bottomNav;
 
@@ -33,6 +34,7 @@ public class CreateRideActivity extends AppCompatActivity {
 
     private String selectedDate = "";
     private String selectedTime = "";
+    private boolean isHostingRide = true; // Default to hosting
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,6 +46,7 @@ public class CreateRideActivity extends AppCompatActivity {
         setupToolbar();
         setupListeners();
         setupBottomNav();
+        updateToggleUI();
     }
 
     private void initViews() {
@@ -57,6 +60,8 @@ public class CreateRideActivity extends AppCompatActivity {
         dateLayout = findViewById(R.id.dateLayout);
         timeLayout = findViewById(R.id.timeLayout);
         bottomNav = findViewById(R.id.bottomNav);
+        lookingForRideButton = findViewById(R.id.lookingForRideButton);
+        hostingRideButton = findViewById(R.id.hostingRideButton);
     }
 
     private void initFirebase() {
@@ -69,6 +74,7 @@ public class CreateRideActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setTitle("Plan your ride");
         }
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
@@ -79,6 +85,22 @@ public class CreateRideActivity extends AppCompatActivity {
     }
 
     private void setupListeners() {
+        lookingForRideButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                isHostingRide = false;
+                updateToggleUI();
+            }
+        });
+
+        hostingRideButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                isHostingRide = true;
+                updateToggleUI();
+            }
+        });
+
         dateLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -96,9 +118,29 @@ public class CreateRideActivity extends AppCompatActivity {
         createRideButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                createRide();
+                if (isHostingRide) {
+                    createRide();
+                } else {
+                    searchRides();
+                }
             }
         });
+    }
+
+    private void updateToggleUI() {
+        if (isHostingRide) {
+            hostingRideButton.setBackgroundTintList(getColorStateList(R.color.status_active));
+            hostingRideButton.setTextColor(getColor(R.color.white));
+            lookingForRideButton.setBackgroundTintList(null);
+            lookingForRideButton.setTextColor(getColor(R.color.primary_blue));
+            createRideButton.setText("Create Ride");
+        } else {
+            lookingForRideButton.setBackgroundTintList(getColorStateList(R.color.status_active));
+            lookingForRideButton.setTextColor(getColor(R.color.white));
+            hostingRideButton.setBackgroundTintList(null);
+            hostingRideButton.setTextColor(getColor(R.color.primary_blue));
+            createRideButton.setText("Search Rides");
+        }
     }
 
     private void setupBottomNav() {
@@ -106,18 +148,40 @@ public class CreateRideActivity extends AppCompatActivity {
         bottomNav.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.nav_home) {
-                finish();
-                return true;
+                try {
+                    Intent intent = new Intent(CreateRideActivity.this, HomeActivity.class);
+                    startActivity(intent);
+                    finish();
+                    return true;
+                } catch (Exception e) {
+                    Toast.makeText(CreateRideActivity.this, "Error opening Home", Toast.LENGTH_SHORT).show();
+                    e.printStackTrace();
+                    return false;
+                }
             } else if (itemId == R.id.nav_create) {
                 return true;
             } else if (itemId == R.id.nav_messages) {
-                startActivity(new Intent(this, MessagesActivity.class));
-                finish();
-                return true;
+                try {
+                    Intent intent = new Intent(CreateRideActivity.this, MessagesActivity.class);
+                    startActivity(intent);
+                    finish();
+                    return true;
+                } catch (Exception e) {
+                    Toast.makeText(CreateRideActivity.this, "Error opening Messages", Toast.LENGTH_SHORT).show();
+                    e.printStackTrace();
+                    return false;
+                }
             } else if (itemId == R.id.nav_profile) {
-                startActivity(new Intent(this, ProfileActivity.class));
-                finish();
-                return true;
+                try {
+                    Intent intent = new Intent(CreateRideActivity.this, ProfileActivity.class);
+                    startActivity(intent);
+                    finish();
+                    return true;
+                } catch (Exception e) {
+                    Toast.makeText(CreateRideActivity.this, "Error opening Profile", Toast.LENGTH_SHORT).show();
+                    e.printStackTrace();
+                    return false;
+                }
             }
             return false;
         });
@@ -159,6 +223,23 @@ public class CreateRideActivity extends AppCompatActivity {
                 false
         );
         timePickerDialog.show();
+    }
+
+    private void searchRides() {
+        String from = fromEditText.getText().toString().trim();
+        String to = toEditText.getText().toString().trim();
+
+        if (from.isEmpty() || to.isEmpty() || selectedDate.isEmpty()) {
+            Toast.makeText(this, "Please fill in From, To, and Date", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Navigate to search results
+        Intent intent = new Intent(this, SearchRideActivity.class);
+        intent.putExtra("from", from);
+        intent.putExtra("to", to);
+        intent.putExtra("date", selectedDate);
+        startActivity(intent);
     }
 
     private void createRide() {
@@ -209,10 +290,11 @@ public class CreateRideActivity extends AppCompatActivity {
         String userId = prefsHelper.getUserId();
         String userName = prefsHelper.getUserName();
 
+        String rideType = isHostingRide ? "hosting" : "looking";
         Ride ride = new Ride(
                 userId, userName, from, to,
-                0.0, 0.0, 0.0, 0.0, // Coordinates (TODO: Add location picker)
-                selectedDate, selectedTime, seats, price
+                0.0, 0.0, 0.0, 0.0,
+                selectedDate, selectedTime, seats, price, rideType
         );
 
         createRideButton.setEnabled(false);
@@ -224,6 +306,10 @@ public class CreateRideActivity extends AppCompatActivity {
             firebaseHelper.getRideRef(rideId).setValue(ride)
                     .addOnSuccessListener(aVoid -> {
                         Toast.makeText(CreateRideActivity.this, "Ride created successfully!", Toast.LENGTH_SHORT).show();
+
+                        Intent intent = new Intent(CreateRideActivity.this, RideConfirmationActivity.class);
+                        intent.putExtra("confirmationType", "ride_created");
+                        startActivity(intent);
                         finish();
                     })
                     .addOnFailureListener(e -> {
@@ -237,6 +323,8 @@ public class CreateRideActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        bottomNav.setSelectedItemId(R.id.nav_create);
+        if (bottomNav != null) {
+            bottomNav.setSelectedItemId(R.id.nav_create);
+        }
     }
 }

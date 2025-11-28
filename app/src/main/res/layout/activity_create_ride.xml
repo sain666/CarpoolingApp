@@ -28,11 +28,43 @@
             android:orientation="vertical"
             android:padding="20dp">
 
+            <!-- Mode Toggle -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/lookingForRideButton"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:text="I'm looking for a ride"
+                    android:textColor="@color/primary_blue"
+                    app:strokeColor="@color/primary_blue"
+                    app:cornerRadius="20dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/hostingRideButton"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:text="I'm hosting a ride"
+                    android:textColor="@color/white"
+                    app:backgroundTint="@color/status_active"
+                    app:cornerRadius="20dp" />
+
+            </LinearLayout>
+
             <!-- From Location -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="24dp"
                 app:cardCornerRadius="8dp"
                 app:cardElevation="2dp">
 
@@ -317,11 +349,6 @@
                 </com.google.android.material.card.MaterialCardView>
 
             </LinearLayout>
-
-            <Space
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1" />
 
             <!-- Create Ride Button -->
             <com.google.android.material.button.MaterialButton

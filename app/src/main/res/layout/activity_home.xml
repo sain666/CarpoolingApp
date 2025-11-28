@@ -102,25 +102,26 @@
         android:orientation="horizontal">
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/riderModeButton"
+            android:id="@+id/myBookingsButton"
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginEnd="8dp"
-            android:text="@string/rider"
+            android:text="@string/your_bookings"
             android:textColor="@color/white"
             app:backgroundTint="@color/status_active"
             app:cornerRadius="20dp" />
 
+
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/driverModeButton"
+            android:id="@+id/myListingsButton"
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginStart="8dp"
-            android:text="@string/driver"
+            android:text="@string/your_listings"
             android:textColor="@color/primary_blue"
             app:strokeColor="@color/primary_blue"
             app:cornerRadius="20dp" />

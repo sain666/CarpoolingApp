@@ -15,12 +15,11 @@
         android:elevation="4dp"
         app:titleTextColor="@color/white" />
 
-    <!-- Messages List -->
+    <!-- Rides List -->
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/messagesRecyclerView"
+        android:id="@+id/ridesRecyclerView"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="match_parent"
         android:padding="16dp"
         android:clipToPadding="false" />
 
@@ -28,39 +27,27 @@
     <LinearLayout
         android:id="@+id/emptyState"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="match_parent"
         android:gravity="center"
         android:orientation="vertical"
-        android:visibility="visible">
+        android:visibility="gone">
 
         <ImageView
             android:layout_width="120dp"
             android:layout_height="120dp"
             android:alpha="0.3"
-            android:src="@android:drawable/ic_dialog_email"
-            android:contentDescription="No messages" />
+            android:src="@android:drawable/ic_menu_search"
+            android:contentDescription="No rides" />
 
         <TextView
+            android:id="@+id/emptyText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="No chat yet"
+            android:text="No rides found"
             android:textColor="@color/text_secondary"
             android:textSize="16sp" />
 
     </LinearLayout>
-
-    <!-- Bottom Navigation -->
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottomNav"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/white"
-        android:elevation="8dp"
-        app:menu="@menu/bottom_nav_menu"
-        app:itemIconTint="@color/primary_blue"
-        app:itemTextColor="@color/primary_blue"
-        app:labelVisibilityMode="labeled" />
 
 </LinearLayout>

@@ -72,17 +72,40 @@ public class ProfileActivity extends AppCompatActivity {
         bottomNav.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.nav_home) {
-                finish();
-                return true;
+                try {
+                    Intent intent = new Intent(ProfileActivity.this, HomeActivity.class);
+                    startActivity(intent);
+                    finish();
+                    return true;
+                } catch (Exception e) {
+                    Toast.makeText(ProfileActivity.this, "Error opening Home", Toast.LENGTH_SHORT).show();
+                    e.printStackTrace();
+                    return false;
+                }
             } else if (itemId == R.id.nav_create) {
-                startActivity(new Intent(this, CreateRideActivity.class));
-                finish();
-                return true;
+                try {
+                    Intent intent = new Intent(ProfileActivity.this, CreateRideActivity.class);
+                    startActivity(intent);
+                    finish();
+                    return true;
+                } catch (Exception e) {
+                    Toast.makeText(ProfileActivity.this, "Error opening Create Ride", Toast.LENGTH_SHORT).show();
+                    e.printStackTrace();
+                    return false;
+                }
             } else if (itemId == R.id.nav_messages) {
-                startActivity(new Intent(this, MessagesActivity.class));
-                finish();
-                return true;
+                try {
+                    Intent intent = new Intent(ProfileActivity.this, MessagesActivity.class);
+                    startActivity(intent);
+                    finish();
+                    return true;
+                } catch (Exception e) {
+                    Toast.makeText(ProfileActivity.this, "Error opening Messages", Toast.LENGTH_SHORT).show();
+                    e.printStackTrace();
+                    return false;
+                }
             } else if (itemId == R.id.nav_profile) {
+                // Already on profile
                 return true;
             }
             return false;
@@ -144,6 +167,8 @@ public class ProfileActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        bottomNav.setSelectedItemId(R.id.nav_profile);
+        if (bottomNav != null) {
+            bottomNav.setSelectedItemId(R.id.nav_profile);
+        }
     }
 }
