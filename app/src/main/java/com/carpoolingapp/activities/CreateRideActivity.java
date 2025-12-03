@@ -111,11 +111,16 @@ public class CreateRideActivity extends AppCompatActivity {
 
         // Disable bottom nav selection change while editing to reduce accidental navigation
         if (bottomNav != null) {
-            bottomNav.setSelectedItemId(R.id.nav_create);
+            bottomNav.setVisibility(View.GONE);
         }
-
-        // Adjust primary button label early
-        createRideButton.setText("Save changes");
+        
+        // Hide looking for ride and hosting ride buttons
+        if (lookingForRideButton != null) {
+            lookingForRideButton.setVisibility(View.GONE);
+        }
+        if (hostingRideButton != null) {
+            hostingRideButton.setVisibility(View.GONE);
+        }
 
         firebaseHelper.getRideRef(editRideId).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
             @Override
@@ -207,7 +212,7 @@ public class CreateRideActivity extends AppCompatActivity {
             hostingRideButton.setTextColor(getColor(R.color.white));
             lookingForRideButton.setBackgroundTintList(getColorStateList(R.color.status_inactive));
             lookingForRideButton.setTextColor(getColor(R.color.primary_blue));
-            createRideButton.setText("Create Ride");
+            createRideButton.setText(isEditMode ? "Save changes" : "Create Ride");
         } else {
             lookingForRideButton.setBackgroundTintList(getColorStateList(R.color.status_active));
             lookingForRideButton.setTextColor(getColor(R.color.white));

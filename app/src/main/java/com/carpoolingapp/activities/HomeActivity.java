@@ -111,7 +111,6 @@ public class HomeActivity extends AppCompatActivity {
             Intent intent = new Intent(this, RideDetailActivity.class);
             intent.putExtra("rideId", ride.getRideId());
             intent.putExtra("mode", "driver_manage");
-            intent.putExtra("isManageMode", true);
             startActivity(intent);
         });
 

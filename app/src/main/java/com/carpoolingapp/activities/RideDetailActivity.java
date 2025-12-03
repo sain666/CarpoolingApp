@@ -4,15 +4,20 @@ import android.content.Intent;
 import android.location.Address;
 import android.location.Geocoder;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import com.carpoolingapp.R;
+import com.carpoolingapp.adapters.BookedUserAdapter;
 import com.carpoolingapp.models.Booking;
 import com.carpoolingapp.models.Ride;
 import com.carpoolingapp.models.User;
@@ -33,12 +38,13 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 public class RideDetailActivity extends AppCompatActivity implements OnMapReadyCallback {
 
-    private TextView fromText, toText, dateText, timeText, priceText, seatsText, driverNameText, ratingText, numRidesText;
+    private TextView fromText, toText, dateText, timeText, priceText, seatsText, seatsLabelText, driverNameText, ratingText, numRidesText;
     private MaterialButton bookNowButton;
     private MaterialButton cancelRideButton;
     private MapView mapView;
@@ -53,6 +59,8 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
     private boolean isMapReady = false;
     private boolean isManageMode = false;
     private String mode; // "driver_manage", "rider_manage", or null
+    private int totalSeats = 0; // Total seats for the ride (for hosting rides)
+    private List<Booking> bookingsList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,6 +94,7 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
         timeText = findViewById(R.id.timeText);
         priceText = findViewById(R.id.priceText);
         seatsText = findViewById(R.id.seatsText);
+        seatsLabelText = findViewById(R.id.seatsLabelText);
         driverNameText = findViewById(R.id.driverNameText);
         ratingText = findViewById(R.id.ratingText);
         numRidesText = findViewById(R.id.numRidesText);
@@ -139,13 +148,28 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
                 dateText.setText(currentRide.getDate());
                 timeText.setText(currentRide.getTime());
                 priceText.setText("$" + String.format(Locale.US, "%.2f", currentRide.getPricePerSeat()));
-                seatsText.setText(currentRide.getAvailableSeats() + " seats available");
                 driverNameText.setText(driverName != null ? driverName : "Driver");
+
+                // Reset totalSeats - will be calculated when bookings are loaded
+                totalSeats = 0;
 
                 loadDriverStats();
 
+                // Load bookings if managing own listing
+                if (isManageMode && "driver_manage".equals(mode)) {
+                    loadBookingsForRide();
+                } else {
+                    // Normal display - update after configureActionsForMode sets the mode correctly
+                    // We'll call updateSeatsDisplay after configureActionsForMode
+                }
+
                 // Configure actions depending on whether this is a management screen
                 configureActionsForMode();
+
+                // Update seats display if not in manage mode (manage mode updates after bookings load)
+                if (!(isManageMode && "driver_manage".equals(mode))) {
+                    updateSeatsDisplay();
+                }
 
                 // Once data is loaded, refresh map if it's already ready
                 if (googleMap != null && isMapReady) {
@@ -217,8 +241,10 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
 
     private void setupListeners() {
         bookNowButton.setOnClickListener(v -> {
-            if (isManageMode) {
+            if (isManageMode && "driver_manage".equals(mode)) {
                 openEditRideScreen();
+            } else if (currentRide != null && "request".equals(currentRide.getRideType()) && !isManageMode) {
+                fulfillRequest();
             } else {
                 bookRide();
             }
@@ -230,6 +256,16 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
                     confirmAndCancelBooking();
                 } else {
                     confirmAndCancelRide();
+                }
+            });
+        }
+
+        // Make seatsText clickable when managing own hosting listing
+        if (seatsText != null && isManageMode && "driver_manage".equals(mode)) {
+            seatsText.setCompoundDrawablesWithIntrinsicBounds(0, 0, R.drawable.ic_info, 0);
+            seatsText.setOnClickListener(v -> {
+                if (currentRide != null && "hosting".equals(currentRide.getRideType()) && !bookingsList.isEmpty()) {
+                    showBookedUsersDialog();
                 }
             });
         }
@@ -254,9 +290,20 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
         }
 
         if (!isManageMode) {
-            // Normal booking mode
+            // Normal booking/viewing mode
             bookNowButton.setVisibility(View.VISIBLE);
-            bookNowButton.setText("Book Now");
+            // Check if this is a request that can be fulfilled
+            if (currentRide != null && "request".equals(currentRide.getRideType())) {
+                String currentUserId = prefsHelper.getUserId();
+                // Don't show fulfill if it's the user's own request
+                if (currentUserId != null && !currentUserId.equals(currentRide.getDriverId())) {
+                    bookNowButton.setText("Fulfill Request");
+                } else {
+                    bookNowButton.setText("Book Now");
+                }
+            } else {
+                bookNowButton.setText("Book Now");
+            }
             if (cancelRideButton != null) {
                 cancelRideButton.setVisibility(View.GONE);
             }
@@ -270,16 +317,32 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
                 && currentUserId.equals(currentRide.getDriverId());
 
         if (isOwner) {
-            bookNowButton.setText("Edit Ride");
+            if ("request".equals(currentRide.getRideType())) {
+                // Managing own request
+                bookNowButton.setText("Edit Request");
+            } else {
+                // Managing own hosting listing
+                bookNowButton.setText("Edit Ride");
+            }
             if (cancelRideButton != null) {
                 cancelRideButton.setVisibility(View.VISIBLE);
             }
         } else {
-            // Not owner – fallback to read‑only booking behavior
-            isManageMode = false;
-            bookNowButton.setText("Book Now");
-            if (cancelRideButton != null) {
-                cancelRideButton.setVisibility(View.GONE);
+            // Not owner – check if this is a request that can be fulfilled
+            if (currentRide != null && "request".equals(currentRide.getRideType()) && currentUserId != null) {
+                // User can fulfill this request
+                bookNowButton.setText("Fulfill Request");
+                bookNowButton.setVisibility(View.VISIBLE);
+                if (cancelRideButton != null) {
+                    cancelRideButton.setVisibility(View.GONE);
+                }
+            } else {
+                // Not owner – fallback to read‑only booking behavior
+                isManageMode = false;
+                bookNowButton.setText("Book Now");
+                if (cancelRideButton != null) {
+                    cancelRideButton.setVisibility(View.GONE);
+                }
             }
         }
     }
@@ -440,6 +503,258 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
+    }
+
+    private void loadBookingsForRide() {
+        if (rideId == null) return;
+
+        firebaseHelper.getBookingsRef()
+                .orderByChild("rideId").equalTo(rideId)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        bookingsList.clear();
+                        int totalBooked = 0;
+
+                        for (DataSnapshot snap : dataSnapshot.getChildren()) {
+                            Booking booking = snap.getValue(Booking.class);
+                            if (booking != null) {
+                                booking.setBookingId(snap.getKey());
+                                bookingsList.add(booking);
+                                totalBooked += booking.getSeatsBooked();
+                            }
+                        }
+
+                        // Calculate total seats only if not already set (first load)
+                        // Total capacity of vehicle doesn't change, only distribution does
+                        if (totalSeats == 0) {
+                            totalSeats = currentRide.getAvailableSeats() + totalBooked;
+                        }
+                        updateSeatsDisplay();
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+                        // Fallback to normal display
+                        updateSeatsDisplay();
+                    }
+                });
+    }
+
+    private void updateSeatsDisplay() {
+        if (seatsText == null || currentRide == null) return;
+
+        if (isManageMode && "driver_manage".equals(mode)) {
+            if ("request".equals(currentRide.getRideType())) {
+                // Managing own request
+                if (seatsLabelText != null) {
+                    seatsLabelText.setText("Requested");
+                }
+                seatsText.setText(currentRide.getAvailableSeats() + " seats");
+                seatsText.setClickable(false);
+            } else {
+                // Managing own hosting listing
+                if (seatsLabelText != null) {
+                    seatsLabelText.setText("Booked");
+                }
+                int booked = totalSeats - currentRide.getAvailableSeats();
+                if (booked > 0 && !bookingsList.isEmpty()) {
+                    seatsText.setText(booked + " / " + totalSeats);
+                    seatsText.setClickable(true);
+                } else {
+                    seatsText.setText("0 / " + totalSeats);
+                    seatsText.setClickable(false);
+                }
+            }
+        } else {
+            // Normal display
+            if (seatsLabelText != null) {
+                seatsLabelText.setText("Available");
+            }
+            seatsText.setText(currentRide.getAvailableSeats() + " seats available");
+            seatsText.setClickable(false);
+        }
+    }
+
+    private AlertDialog bookedUsersDialog;
+    private BookedUserAdapter bookedUsersAdapter;
+
+    private void showBookedUsersDialog() {
+        if (bookingsList.isEmpty()) {
+            Toast.makeText(this, "No bookings found", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Create custom dialog view with RecyclerView
+        View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_booked_users, null);
+        RecyclerView recyclerView = dialogView.findViewById(R.id.usersRecyclerView);
+        
+        // Setup RecyclerView
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        bookedUsersAdapter = new BookedUserAdapter(bookingsList, this, new BookedUserAdapter.OnUserActionListener() {
+            @Override
+            public void onMessageClick(Booking booking) {
+                // Dummy for now
+                Toast.makeText(RideDetailActivity.this, "Messaging feature coming soon", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onKickClick(Booking booking) {
+                confirmKickUser(booking);
+            }
+        });
+        recyclerView.setAdapter(bookedUsersAdapter);
+
+        // Show dialog
+        bookedUsersDialog = new AlertDialog.Builder(this)
+                .setTitle("Booked Users")
+                .setView(dialogView)
+                .setNegativeButton("Close", null)
+                .create();
+        bookedUsersDialog.show();
+    }
+
+    private void confirmKickUser(Booking booking) {
+        new AlertDialog.Builder(this)
+                .setTitle("Kick User")
+                .setMessage("Are you sure you want to remove " + booking.getRiderName() + " from this ride?")
+                .setPositiveButton("Yes, remove", (dialog, which) -> kickUserFromRide(booking))
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void kickUserFromRide(Booking booking) {
+        if (booking.getBookingId() == null) {
+            Toast.makeText(this, "Booking ID not found", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        int seatsToRestore = booking.getSeatsBooked();
+
+        // Delete the booking
+        firebaseHelper.getBookingRef(booking.getBookingId()).removeValue()
+                .addOnSuccessListener(aVoid -> {
+                    // Restore seats to the ride
+                    restoreRideSeats(seatsToRestore);
+                    // Remove from local list and update adapter
+                    bookingsList.remove(booking);
+                    if (bookedUsersAdapter != null) {
+                        bookedUsersAdapter.notifyDataSetChanged();
+                    }
+                    // Reload ride data from Firebase to get updated availableSeats, then reload bookings
+                    reloadRideAndBookings();
+                    Toast.makeText(RideDetailActivity.this, booking.getRiderName() + " removed from ride", Toast.LENGTH_SHORT).show();
+                    
+                    // Close dialog if no more bookings
+                    if (bookingsList.isEmpty() && bookedUsersDialog != null && bookedUsersDialog.isShowing()) {
+                        bookedUsersDialog.dismiss();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(RideDetailActivity.this, "Failed to remove user", Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void reloadRideAndBookings() {
+        // Reload ride data from Firebase to get updated availableSeats
+        firebaseHelper.getRideRef(rideId).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                Ride ride = dataSnapshot.getValue(Ride.class);
+                if (ride != null) {
+                    currentRide = ride;
+                    // Now reload bookings with updated ride data
+                    loadBookingsForRide();
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+                // Still try to reload bookings with existing data
+                loadBookingsForRide();
+            }
+        });
+    }
+
+    private void fulfillRequest() {
+        if (currentRide == null || rideId == null) {
+            Toast.makeText(this, "Ride details unavailable", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String currentUserId = prefsHelper.getUserId();
+        String currentUserName = prefsHelper.getUserName();
+
+        if (currentUserId == null || currentUserName == null) {
+            Toast.makeText(this, "User information unavailable", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Check if user is trying to fulfill their own request
+        if (currentUserId.equals(currentRide.getDriverId())) {
+            Toast.makeText(this, "You cannot fulfill your own request!", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle("Fulfill Request")
+                .setMessage("Are you sure you want to fulfill this ride request? You will become the driver for this ride.")
+                .setPositiveButton("Yes, fulfill", (dialog, which) -> {
+                    // Store original requestor info before updating
+                    String requestorId = currentRide.getDriverId();
+                    String requestorName = currentRide.getDriverName();
+                    int requestedSeats = currentRide.getAvailableSeats();
+
+                    // Update the ride to change driver and type
+                    currentRide.setDriverId(currentUserId);
+                    currentRide.setDriverName(currentUserName);
+                    currentRide.setRideType("hosting");
+                    // Set available seats to 0 since all requested seats will be booked
+                    currentRide.setAvailableSeats(0);
+                    currentRide.setUpdatedAt(System.currentTimeMillis());
+
+                    firebaseHelper.getRideRef(rideId).setValue(currentRide)
+                            .addOnSuccessListener(aVoid -> {
+                                // Create a booking for the original requestor
+                                createBookingForRequestor(requestorId, requestorName, requestedSeats);
+                                Toast.makeText(RideDetailActivity.this, "Request fulfilled! You are now the driver.", Toast.LENGTH_SHORT).show();
+                                finish();
+                            })
+                            .addOnFailureListener(e -> {
+                                Toast.makeText(RideDetailActivity.this, "Failed to fulfill request", Toast.LENGTH_SHORT).show();
+                            });
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void createBookingForRequestor(String requestorId, String requestorName, int requestedSeats) {
+        if (currentRide == null) return;
+
+        String currentUserId = prefsHelper.getUserId();
+        String currentUserName = prefsHelper.getUserName();
+
+        // Create booking for the requestor
+        Booking booking = new Booking(
+                rideId,
+                requestorId,
+                requestorName,
+                currentUserId,
+                currentUserName,
+                currentRide.getFromLocation(),
+                currentRide.getToLocation(),
+                currentRide.getDate(),
+                currentRide.getTime(),
+                requestedSeats, // All requested seats
+                currentRide.getPricePerSeat() * requestedSeats,
+                "Credit Card"
+        );
+
+        String bookingId = firebaseHelper.getBookingsRef().push().getKey();
+        if (bookingId != null) {
+            booking.setBookingId(bookingId);
+            firebaseHelper.getBookingRef(bookingId).setValue(booking);
+        }
     }
 
     private void proceedToPayment(int seatsToBook, boolean isDemo) {
