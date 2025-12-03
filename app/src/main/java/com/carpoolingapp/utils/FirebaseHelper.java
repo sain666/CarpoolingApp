@@ -1,11 +1,10 @@
 package com.carpoolingapp.utils;
 
-// File: CarpoolingApp/app/src/main/java/com/carpooling/app/utils/FirebaseHelper.java
-
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.carpoolingapp.models.Ride;
 
 public class FirebaseHelper {
     private static FirebaseHelper instance;
@@ -76,5 +75,19 @@ public class FirebaseHelper {
 
     public DatabaseReference getBookingRef(String bookingId) {
         return getBookingsRef().child(bookingId);
+    }
+
+    public void createRide(Ride ride, final OnRideCreatedListener listener) {
+        String rideId = getRidesRef().push().getKey();
+        if (rideId != null) {
+            getRideRef(rideId).setValue(ride)
+                .addOnSuccessListener(aVoid -> listener.onSuccess())
+                .addOnFailureListener(e -> listener.onFailure());
+        }
+    }
+
+    public interface OnRideCreatedListener {
+        void onSuccess();
+        void onFailure();
     }
 }

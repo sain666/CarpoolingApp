@@ -124,7 +124,10 @@ public class RegisterActivity extends AppCompatActivity {
                                                 prefsHelper.saveUserData(
                                                         firebaseUser.getUid(),
                                                         name,
-                                                        email
+                                                        email,
+                                                        "0.0",
+                                                        "0",
+                                                        phone
                                                 );
 
                                                 // Navigate to Home

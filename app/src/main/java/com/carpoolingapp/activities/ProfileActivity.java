@@ -15,7 +15,7 @@ import com.google.android.material.button.MaterialButton;
 
 public class ProfileActivity extends AppCompatActivity {
 
-    private TextView userNameText, userEmailText, ratingText;
+    private TextView userNameText, userEmailText, ratingText, numRidesTest;
     private TextView editProfileOption, changePasswordOption, paymentMethodsOption, rideHistoryOption;
     private MaterialButton logoutButton;
     private BottomNavigationView bottomNav;
@@ -40,6 +40,7 @@ public class ProfileActivity extends AppCompatActivity {
         userNameText = findViewById(R.id.userNameText);
         userEmailText = findViewById(R.id.userEmailText);
         ratingText = findViewById(R.id.ratingText);
+        numRidesTest = findViewById(R.id.numRidesText);
         editProfileOption = findViewById(R.id.editProfileOption);
         changePasswordOption = findViewById(R.id.changePasswordOption);
         paymentMethodsOption = findViewById(R.id.paymentMethodsOption);
@@ -115,6 +116,8 @@ public class ProfileActivity extends AppCompatActivity {
     private void loadUserData() {
         userNameText.setText(prefsHelper.getUserName());
         userEmailText.setText(prefsHelper.getUserEmail());
+        ratingText.setText((prefsHelper.getUserRating().contains(".")) ? prefsHelper.getUserRating() : prefsHelper.getUserRating() + ".0" );
+        numRidesTest.setText(prefsHelper.getUserTotalRides() + " rides");
     }
 
     private void setupListeners() {

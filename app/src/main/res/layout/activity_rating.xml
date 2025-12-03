@@ -10,13 +10,13 @@
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/white"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/background_blue"
         android:elevation="4dp"
         android:paddingStart="20dp"
-        android:paddingTop="10dp"
-        app:navigationIcon="@drawable/arrow"
-        app:title="Rate &amp; Review" />
+        app:navigationIcon="@drawable/white_arrow"
+        app:title="Rate and Review"
+        app:titleTextColor="@color/white" />
 
     <ScrollView
         android:layout_width="match_parent"

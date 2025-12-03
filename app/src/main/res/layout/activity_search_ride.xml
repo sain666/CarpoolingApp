@@ -11,69 +11,116 @@
         android:layout_width="match_parent"
         android:layout_height="240dp"
         android:layout_gravity="top"
-        android:layout_marginTop="-20dp"
+        android:layout_marginTop="-30dp"
         app:cardBackgroundColor="#788DAD"
         app:cardCornerRadius="30dp">
 
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="45dp"
-            android:background="#788DAD"
-            android:paddingStart="10dp"
+            android:layout_height="?attr/actionBarSize"
+            android:background="@color/status_inactive"
+            android:elevation="4dp"
+            android:paddingStart="20dp"
+            android:layout_marginTop="30dp"
             app:navigationIcon="@drawable/white_arrow"
+            app:title="Search Results"
             app:titleTextColor="@color/white" />
 
         <TextView
-            android:id="@+id/textView"
+            android:id="@+id/sortLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="60dp"
-            android:layout_marginTop="120dp"
-            android:text="Sorted by"
+            android:layout_marginTop="90dp"
+            android:text="@string/sorted_by_label"
             android:textColor="#FFFFFFFF"
             android:textSize="17sp" />
 
         <Spinner
             android:id="@+id/sortSpinner"
-            android:layout_width="150dp"
+            android:layout_width="200dp"
             android:layout_height="40dp"
             android:layout_marginStart="60dp"
-            android:layout_marginTop="145dp"
+            android:layout_marginTop="115dp"
+            android:background="@android:drawable/btn_dropdown"
+            android:popupBackground="#FFFFFF"
+            android:spinnerMode="dropdown" />
+
+        <TextView
+            android:id="@+id/filterLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="60dp"
+            android:layout_marginTop="160dp"
+            android:text="@string/filtered_by_label"
+            android:textColor="#FFFFFFFF"
+            android:textSize="17sp" />
+
+        <Spinner
+            android:id="@+id/filterSpinner"
+            android:layout_width="200dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="60dp"
+            android:layout_marginTop="185dp"
             android:background="@android:drawable/btn_dropdown"
             android:popupBackground="#FFFFFF"
             android:spinnerMode="dropdown" />
 
     </androidx.cardview.widget.CardView>
 
-    <!-- RecyclerView with proper spacing -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/ridesRecyclerView"
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="16dp"
-        android:layout_weight="1"
-        android:clipToPadding="false"
-        android:paddingStart="16dp"
-        android:paddingTop="8dp"
-        android:paddingEnd="16dp"
-        android:paddingBottom="16dp" />
+        android:layout_weight="1">
 
-    <!-- Demo Button -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/demoButton"
-        style="@style/Widget.MaterialComponents.Button.TextButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="16dp"
-        android:text="Demo test: booking walkthrough"
-        android:textColor="@color/primary_blue"
-        android:textSize="14sp" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp">
 
-    <!-- Empty State -->
+            <TextView
+                android:id="@+id/hostingRidesHeader"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Available Rides"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/primary_blue"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="8dp"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/hostingRidesRecyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:isScrollContainer="false"
+                android:nestedScrollingEnabled="false"
+                android:overScrollMode="never" />
+
+            <TextView
+                android:id="@+id/requestRidesHeader"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Ride Requests"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/primary_blue"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="8dp"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/requestRidesRecyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:isScrollContainer="false"
+                android:nestedScrollingEnabled="false"
+                android:overScrollMode="never" />
+
+        </LinearLayout>
+    </ScrollView>
+
     <LinearLayout
         android:id="@+id/emptyState"
         android:layout_width="match_parent"
@@ -101,21 +148,6 @@
             android:textAlignment="center"
             android:textColor="@color/text_secondary"
             android:textSize="16sp" />
-
-        <!-- Demo Button in Empty State -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/demoWalkthroughButton"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:paddingStart="24dp"
-            android:paddingEnd="24dp"
-            android:text="Can't find one? Try Demo Booking"
-            android:textColor="@color/primary_blue"
-            app:cornerRadius="20dp"
-            app:strokeColor="@color/primary_blue" />
-
     </LinearLayout>
 
 </LinearLayout>

@@ -10,6 +10,10 @@ public class SharedPrefsHelper {
     private static final String KEY_USER_NAME = "userName";
     private static final String KEY_USER_EMAIL = "userEmail";
     private static final String KEY_USER_TYPE = "userType";
+    private static final String KEY_USER_RATING = "rating";
+    private static final String KEY_USER_TOTAL_RIDES = "totalRides";
+    private static final String KEY_USER_PHONE = "phone";
+
     private static final String KEY_IS_LOGGED_IN = "isLoggedIn";
 
     private SharedPreferences prefs;
@@ -21,10 +25,13 @@ public class SharedPrefsHelper {
     }
 
     // Save user data
-    public void saveUserData(String userId, String userName, String userEmail) {
+    public void saveUserData(String userId, String userName, String userEmail, String rating, String totalRides, String phone) {
         editor.putString(KEY_USER_ID, userId);
         editor.putString(KEY_USER_NAME, userName);
         editor.putString(KEY_USER_EMAIL, userEmail);
+        editor.putString(KEY_USER_RATING, rating);
+        editor.putString(KEY_USER_TOTAL_RIDES, totalRides);
+        editor.putString(KEY_USER_PHONE, phone);
         editor.putBoolean(KEY_IS_LOGGED_IN, true);
         editor.apply();
     }
@@ -41,6 +48,12 @@ public class SharedPrefsHelper {
     public String getUserEmail() {
         return prefs.getString(KEY_USER_EMAIL, null);
     }
+
+    public String getUserRating() { return prefs.getString(KEY_USER_RATING, "0.0"); }
+    public String getUserTotalRides() { return prefs.getString(KEY_USER_TOTAL_RIDES, "0"); }
+    public String getUserPhone() { return prefs.getString(KEY_USER_PHONE, "XX-XXX-XXXX"); }
+
+
 
     public String getUserType() {
         return prefs.getString(KEY_USER_TYPE, "rider");

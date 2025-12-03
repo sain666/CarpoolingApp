@@ -39,6 +39,9 @@ public class CreateRideActivity extends AppCompatActivity {
     private String selectedDate = "";
     private String selectedTime = "";
     private boolean isHostingRide = true;
+    private boolean isEditMode = false;
+    private String editRideId;
+    private Ride existingRide;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,6 +53,7 @@ public class CreateRideActivity extends AppCompatActivity {
         setupToolbar();
         setupListeners();
         setupBottomNav();
+        initEditModeIfNeeded();
         updateToggleUI();
     }
 
@@ -84,11 +88,79 @@ public class CreateRideActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            getSupportActionBar().setTitle("Plan your ride");
+            getSupportActionBar().setTitle(isEditMode ? "Edit ride" : "Plan your ride");
         }
         toolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                finish();
+            }
+        });
+    }
+
+    /**
+     * Check if this screen was opened for editing an existing ride and, if so, load its data.
+     */
+    private void initEditModeIfNeeded() {
+        editRideId = getIntent().getStringExtra("rideId");
+        isEditMode = getIntent().getBooleanExtra("isEditMode", false) && editRideId != null;
+
+        if (!isEditMode) {
+            return;
+        }
+
+        if (bottomNav != null) {
+            bottomNav.setVisibility(View.GONE);
+        }
+        
+        // Hide looking for ride and hosting ride buttons
+        if (lookingForRideButton != null) {
+            lookingForRideButton.setVisibility(View.GONE);
+        }
+        if (hostingRideButton != null) {
+            hostingRideButton.setVisibility(View.GONE);
+        }
+
+        firebaseHelper.getRideRef(editRideId).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+            @Override
+            public void onDataChange(com.google.firebase.database.DataSnapshot dataSnapshot) {
+                existingRide = dataSnapshot.getValue(Ride.class);
+                if (existingRide == null) {
+                    Toast.makeText(CreateRideActivity.this, "Ride not found", Toast.LENGTH_SHORT).show();
+                    finish();
+                    return;
+                }
+
+                // Populate form fields
+                fromEditText.setText(existingRide.getFromLocation());
+                toEditText.setText(existingRide.getToLocation());
+                seatsEditText.setText(String.valueOf(existingRide.getAvailableSeats()));
+                priceEditText.setText(String.valueOf(existingRide.getPricePerSeat()));
+
+                selectedDate = existingRide.getDate();
+                selectedTime = existingRide.getTime();
+                dateText.setText(selectedDate);
+                timeText.setText(selectedTime);
+
+                // Ride type & toggle state
+                isHostingRide = "hosting".equals(existingRide.getRideType());
+                updateToggleUI();
+
+                // Amenities
+                luggageCheckBox.setChecked(existingRide.isAllowsLuggage());
+                petsCheckBox.setChecked(existingRide.isAllowsPets());
+                bikesCheckBox.setChecked(existingRide.isAllowsBikes());
+                snowboardsCheckBox.setChecked(existingRide.isAllowsSnowboards());
+
+                // Update toolbar title for clarity
+                if (getSupportActionBar() != null) {
+                    getSupportActionBar().setTitle(isHostingRide ? "Edit hosted ride" : "Edit ride request");
+                }
+            }
+
+            @Override
+            public void onCancelled(com.google.firebase.database.DatabaseError databaseError) {
+                Toast.makeText(CreateRideActivity.this, "Failed to load ride", Toast.LENGTH_SHORT).show();
                 finish();
             }
         });
@@ -128,11 +200,7 @@ public class CreateRideActivity extends AppCompatActivity {
         createRideButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (isHostingRide) {
-                    createRide();
-                } else {
-                    searchRides();
-                }
+                createRide();
             }
         });
     }
@@ -141,15 +209,15 @@ public class CreateRideActivity extends AppCompatActivity {
         if (isHostingRide) {
             hostingRideButton.setBackgroundTintList(getColorStateList(R.color.status_active));
             hostingRideButton.setTextColor(getColor(R.color.white));
-            lookingForRideButton.setBackgroundTintList(null);
+            lookingForRideButton.setBackgroundTintList(getColorStateList(R.color.status_inactive));
             lookingForRideButton.setTextColor(getColor(R.color.primary_blue));
-            createRideButton.setText("Create Ride");
+            createRideButton.setText(isEditMode ? "Save changes" : "Create Ride");
         } else {
             lookingForRideButton.setBackgroundTintList(getColorStateList(R.color.status_active));
             lookingForRideButton.setTextColor(getColor(R.color.white));
-            hostingRideButton.setBackgroundTintList(null);
+            hostingRideButton.setBackgroundTintList(getColorStateList(R.color.status_inactive));
             hostingRideButton.setTextColor(getColor(R.color.primary_blue));
-            createRideButton.setText("Search Rides");
+            createRideButton.setText(isEditMode ? "Save changes" : "Create Request");
         }
     }
 
@@ -295,51 +363,88 @@ public class CreateRideActivity extends AppCompatActivity {
             return;
         }
 
-        // Create ride
-        String userId = prefsHelper.getUserId();
-        String userName = prefsHelper.getUserName();
+        if (isEditMode && existingRide != null && editRideId != null) {
+            // Update existing ride
+            existingRide.setFromLocation(from);
+            existingRide.setToLocation(to);
+            existingRide.setDate(selectedDate);
+            existingRide.setTime(selectedTime);
+            existingRide.setAvailableSeats(seats);
+            existingRide.setPricePerSeat(price);
+            existingRide.setRideType(isHostingRide ? "hosting" : "request");
 
-        String rideType = isHostingRide ? "hosting" : "looking";
-        Ride ride = new Ride(
-                userId, userName, from, to,
-                0.0, 0.0, 0.0, 0.0,
-                selectedDate, selectedTime, seats, price, rideType
-        );
+            existingRide.setAllowsLuggage(luggageCheckBox.isChecked());
+            existingRide.setAllowsPets(petsCheckBox.isChecked());
+            existingRide.setAllowsBikes(bikesCheckBox.isChecked());
+            existingRide.setAllowsSnowboards(snowboardsCheckBox.isChecked());
 
-        // NEW: Set amenities
-        ride.setAllowsLuggage(luggageCheckBox.isChecked());
-        ride.setAllowsPets(petsCheckBox.isChecked());
-        ride.setAllowsBikes(bikesCheckBox.isChecked());
-        ride.setAllowsSnowboards(snowboardsCheckBox.isChecked());
+            existingRide.setUpdatedAt(System.currentTimeMillis());
 
-        createRideButton.setEnabled(false);
-        createRideButton.setText("Creating...");
+            createRideButton.setEnabled(false);
+            createRideButton.setText("Saving...");
 
-        String rideId = firebaseHelper.getRidesRef().push().getKey();
-        if (rideId != null) {
-            ride.setRideId(rideId);
-            firebaseHelper.getRideRef(rideId).setValue(ride)
+            firebaseHelper.getRideRef(editRideId)
+                    .setValue(existingRide)
                     .addOnSuccessListener(aVoid -> {
-                        Toast.makeText(CreateRideActivity.this, "Ride created successfully!", Toast.LENGTH_SHORT).show();
-
-                        Intent intent = new Intent(CreateRideActivity.this, RideConfirmationActivity.class);
-                        intent.putExtra("confirmationType", "ride_created");
-                        startActivity(intent);
+                        Toast.makeText(CreateRideActivity.this, "Ride updated successfully", Toast.LENGTH_SHORT).show();
+                        Intent homeIntent = new Intent(CreateRideActivity.this, HomeActivity.class);
+                        homeIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(homeIntent);
                         finish();
                     })
                     .addOnFailureListener(e -> {
+                        Toast.makeText(CreateRideActivity.this, "Failed to update ride.", Toast.LENGTH_SHORT).show();
                         createRideButton.setEnabled(true);
-                        createRideButton.setText("Create Ride");
-                        Toast.makeText(CreateRideActivity.this, "Failed to create ride: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        createRideButton.setText("Save changes");
                     });
-        }
-    }
+        } else {
+            // Create new ride
+            String userId = prefsHelper.getUserId();
+            String userName = prefsHelper.getUserName();
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (bottomNav != null) {
-            bottomNav.setSelectedItemId(R.id.nav_create);
+            String rideType = isHostingRide ? "hosting" : "request";
+            Ride ride = new Ride();
+            ride.setDriverId(userId);
+            ride.setDriverName(userName);
+            ride.setFromLocation(from);
+            ride.setToLocation(to);
+            ride.setDate(selectedDate);
+            ride.setTime(selectedTime);
+            ride.setAvailableSeats(seats);
+            ride.setPricePerSeat(price);
+            ride.setRideType(rideType);
+
+            ride.setCreatedAt(System.currentTimeMillis());
+
+
+            // NEW: Set amenities
+            ride.setAllowsLuggage(luggageCheckBox.isChecked());
+            ride.setAllowsPets(petsCheckBox.isChecked());
+            ride.setAllowsBikes(bikesCheckBox.isChecked());
+            ride.setAllowsSnowboards(snowboardsCheckBox.isChecked());
+
+            createRideButton.setEnabled(false);
+            createRideButton.setText(isHostingRide ? "Creating..." : "Creating Request...");
+
+            String rideId = firebaseHelper.getRidesRef().push().getKey();
+            if (rideId != null) {
+                firebaseHelper.getRideRef(rideId).setValue(ride)
+                    .addOnSuccessListener(aVoid -> {
+                        Toast.makeText(CreateRideActivity.this,
+                                isHostingRide ? "Ride created successfully" : "Request created successfully",
+                                Toast.LENGTH_SHORT).show();
+                        // Return to home so the user clearly sees the new ride and avoid empty back stack
+                        Intent homeIntent = new Intent(CreateRideActivity.this, HomeActivity.class);
+                        homeIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(homeIntent);
+                        finish();
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(CreateRideActivity.this, "Failed to create.", Toast.LENGTH_SHORT).show();
+                        createRideButton.setEnabled(true);
+                        createRideButton.setText(isHostingRide ? "Create Ride" : "Create Request");
+                    });
+            }
         }
     }
 }

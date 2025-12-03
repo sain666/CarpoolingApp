@@ -13,42 +13,13 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Status Badge -->
-
-        <!-- From Location -->
+        <!-- Price, Seats, and Amenity Icons -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
             android:orientation="horizontal">
 
-            <de.hdodenhof.circleimageview.CircleImageView
-                android:id="@+id/userImage"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:src="@drawable/avatar" />
-
-            <TextView
-                android:id="@+id/userNameText"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical"
-                android:layout_marginStart="8dp"
-                android:layout_weight="1"
-                android:text="Driver Name"
-                android:textColor="#6D839D"
-                android:textSize="17sp"
-                android:textStyle="bold" />
-            <TextView
-                android:id="@+id/seatsBookedText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical"
-                android:text="2 seats booked"
-                android:textColor="@color/text_secondary"
-                android:textSize="14sp"
-                android:layout_marginEnd="8dp"/>
-
+            <!-- Price -->
             <TextView
                 android:id="@+id/priceText"
                 android:layout_width="wrap_content"
@@ -58,8 +29,77 @@
                 android:textSize="25sp"
                 android:textStyle="bold" />
 
+            <Space
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <!-- Seats -->
+            <TextView
+                android:id="@+id/seatsText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_marginEnd="16dp"
+                android:text="2 seats"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
+
+            <!-- Amenity Icons -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/ic_luggage"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_marginEnd="8dp"
+                    android:padding="4dp"
+                    android:src="@drawable/ic_luggage"
+                    android:visibility="gone"
+                    android:background="@drawable/bg_amenity_icon"
+                    android:contentDescription="Luggage allowed" />
+
+                <ImageView
+                    android:id="@+id/ic_pet"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_marginEnd="8dp"
+                    android:padding="4dp"
+                    android:src="@drawable/ic_pet"
+                    android:visibility="gone"
+                    android:background="@drawable/bg_amenity_icon"
+                    android:contentDescription="Pet friendly" />
+
+                <ImageView
+                    android:id="@+id/ic_bike"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_marginEnd="8dp"
+                    android:padding="4dp"
+                    android:src="@drawable/ic_bike"
+                    android:visibility="gone"
+                    android:background="@drawable/bg_amenity_icon"
+                    android:contentDescription="Bikes allowed" />
+
+                <ImageView
+                    android:id="@+id/ic_snowboard"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:padding="4dp"
+                    android:src="@drawable/ic_snowboard"
+                    android:visibility="gone"
+                    android:background="@drawable/bg_amenity_icon"
+                    android:contentDescription="Snowboards allowed" />
+
+            </LinearLayout>
+
         </LinearLayout>
 
+        <!-- From Location -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -70,9 +110,8 @@
                 android:layout_width="20dp"
                 android:layout_height="20dp"
                 android:layout_gravity="center_vertical"
-                android:layout_marginStart="3dp"
-                android:contentDescription="From"
                 android:src="@android:drawable/ic_menu_mylocation"
+                android:contentDescription="From"
                 app:tint="@color/primary_blue" />
 
             <TextView
@@ -99,7 +138,6 @@
                 android:layout_width="20dp"
                 android:layout_height="20dp"
                 android:layout_gravity="center_vertical"
-                android:layout_marginStart="4dp"
                 android:contentDescription="To"
                 android:src="@android:drawable/ic_dialog_map"
                 app:tint="@color/button_primary" />
@@ -128,7 +166,6 @@
                 android:layout_width="16dp"
                 android:layout_height="16dp"
                 android:layout_gravity="center_vertical"
-                android:layout_marginStart="4dp"
                 android:contentDescription="Date"
                 android:src="@drawable/today"
                 app:tint="@color/text_secondary" />
@@ -148,8 +185,8 @@
                 android:layout_height="16dp"
                 android:layout_gravity="center_vertical"
                 android:layout_marginStart="16dp"
-                android:contentDescription="Time"
                 android:src="@android:drawable/ic_menu_recent_history"
+                android:contentDescription="Time"
                 app:tint="@color/text_secondary" />
 
             <TextView
@@ -164,43 +201,31 @@
 
         </LinearLayout>
 
+        <!-- Rider Info -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="12dp"
             android:orientation="horizontal">
 
             <TextView
-                android:id="@+id/statusBadge"
                 android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:background="@drawable/bg_status_badge"
-                android:paddingStart="12dp"
-                android:paddingTop="4dp"
-                android:paddingEnd="12dp"
-                android:paddingBottom="4dp"
-                android:text="Active"
-                android:textColor="@color/white"
+                android:layout_height="wrap_content"
+                android:text="Rider: "
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/riderNameText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Rider Name"
+                android:textColor="@color/text_primary"
                 android:textSize="12sp"
                 android:textStyle="bold" />
 
-            <Space
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1" />
-
-            <ImageView
-                android:id="@+id/chatIcon"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_gravity="center_vertical"
-                android:contentDescription="Chat"
-                android:src="@android:drawable/ic_menu_send"
-                app:tint="@color/primary_blue" />
-
         </LinearLayout>
-
-        <!-- Driver/Rider Info -->
 
     </LinearLayout>
 

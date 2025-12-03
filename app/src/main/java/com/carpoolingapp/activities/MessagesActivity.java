@@ -41,7 +41,6 @@ public class MessagesActivity extends AppCompatActivity {
         prefsHelper = new SharedPrefsHelper(this);
 
         initViews();
-        setupToolbar();
         setupBottomNav();
         setupRecyclerView();
         loadConversations();
@@ -51,14 +50,6 @@ public class MessagesActivity extends AppCompatActivity {
         messagesRecyclerView = findViewById(R.id.messagesRecyclerView);
         bottomNav = findViewById(R.id.bottomNav);
         emptyState = findViewById(R.id.emptyState);
-    }
-
-    private void setupToolbar() {
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setTitle("Messages");
-        }
     }
 
     private void setupBottomNav() {

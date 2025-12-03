@@ -16,7 +16,7 @@ import com.carpoolingapp.R;
 import com.carpoolingapp.adapters.RideAdapter;
 import com.carpoolingapp.models.Ride;
 import com.carpoolingapp.utils.FirebaseHelper;
-import com.google.android.material.button.MaterialButton;
+import com.carpoolingapp.utils.SharedPrefsHelper;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
@@ -27,17 +27,24 @@ import java.util.List;
 
 public class SearchRideActivity extends AppCompatActivity {
 
-    private RecyclerView ridesRecyclerView;
+    private RecyclerView hostingRidesRecyclerView, requestRidesRecyclerView;
     private View emptyState;
-    private TextView emptyText;
-    private MaterialButton demoButton, demoWalkthroughButton;
-    private Spinner sortSpinner;
-    private RideAdapter adapter;
-    private List<Ride> rideList;
+    private TextView emptyText, hostingRidesHeader, requestRidesHeader;
+    private Spinner sortSpinner, filterSpinner;
+    private RideAdapter hostingAdapter, requestAdapter;
+    private List<Ride> hostingRideList, requestRideList;
     private FirebaseHelper firebaseHelper;
+    private SharedPrefsHelper prefsHelper;
 
     private String searchFrom, searchTo, searchDate;
     private String currentSortOption = "Cheapest";
+    private FilterType currentFilter = FilterType.ALL;
+
+    private enum FilterType {
+        ALL,
+        HOSTING,
+        REQUEST
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,19 +58,22 @@ public class SearchRideActivity extends AppCompatActivity {
         initViews();
         setupToolbar();
         setupSortSpinner();
-        setupRecyclerView();
-        setupDemoButtons();
+        setupFilterSpinner();
+        setupRecyclerViews();
         searchRides();
     }
 
     private void initViews() {
-        ridesRecyclerView = findViewById(R.id.ridesRecyclerView);
+        hostingRidesRecyclerView = findViewById(R.id.hostingRidesRecyclerView);
+        requestRidesRecyclerView = findViewById(R.id.requestRidesRecyclerView);
+        hostingRidesHeader = findViewById(R.id.hostingRidesHeader);
+        requestRidesHeader = findViewById(R.id.requestRidesHeader);
         emptyState = findViewById(R.id.emptyState);
         emptyText = findViewById(R.id.emptyText);
-        demoButton = findViewById(R.id.demoButton);
-        demoWalkthroughButton = findViewById(R.id.demoWalkthroughButton);
         sortSpinner = findViewById(R.id.sortSpinner);
+        filterSpinner = findViewById(R.id.filterSpinner);
         firebaseHelper = FirebaseHelper.getInstance();
+        prefsHelper = new SharedPrefsHelper(this);
     }
 
     private void setupToolbar() {
@@ -100,45 +110,58 @@ public class SearchRideActivity extends AppCompatActivity {
         });
     }
 
-    private void setupRecyclerView() {
-        rideList = new ArrayList<>();
-        adapter = new RideAdapter(this, rideList, new RideAdapter.OnRideClickListener() {
+    private void setupFilterSpinner() {
+        if (filterSpinner == null) return;
+
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
+                this,
+                R.array.ride_filter_options,
+                android.R.layout.simple_spinner_item
+        );
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        filterSpinner.setAdapter(adapter);
+
+        filterSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
-            public void onRideClick(Ride ride) {
-                // Open ride details
-                Intent intent = new Intent(SearchRideActivity.this, RideDetailActivity.class);
-                intent.putExtra("rideId", ride.getRideId());
-                intent.putExtra("driverId", ride.getDriverId());
-                intent.putExtra("driverName", ride.getDriverName());
-                intent.putExtra("from", ride.getFromLocation());
-                intent.putExtra("to", ride.getToLocation());
-                intent.putExtra("date", ride.getDate());
-                intent.putExtra("time", ride.getTime());
-                intent.putExtra("price", ride.getPricePerSeat());
-                intent.putExtra("seats", ride.getAvailableSeats());
-                startActivity(intent);
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String selected = parent.getItemAtPosition(position).toString();
+                if (selected.equalsIgnoreCase(getString(R.string.filter_option_available))) {
+                    currentFilter = FilterType.HOSTING;
+                } else if (selected.equalsIgnoreCase(getString(R.string.filter_option_requests))) {
+                    currentFilter = FilterType.REQUEST;
+                } else {
+                    currentFilter = FilterType.ALL;
+                }
+                updateUI();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
             }
         });
-        ridesRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        ridesRecyclerView.setAdapter(adapter);
     }
 
-    private void setupDemoButtons() {
-        View.OnClickListener demoClickListener = v -> {
-            Toast.makeText(SearchRideActivity.this, "Starting demo walkthrough...", Toast.LENGTH_SHORT).show();
+    private void setupRecyclerViews() {
+        hostingRideList = new ArrayList<>();
+        requestRideList = new ArrayList<>();
+
+        RideAdapter.OnRideClickListener onRideClickListener = ride -> {
             Intent intent = new Intent(SearchRideActivity.this, RideDetailActivity.class);
-            intent.putExtra("isDemo", true);
+            intent.putExtra("rideId", ride.getRideId());
             startActivity(intent);
         };
 
-        if (demoButton != null) {
-            demoButton.setOnClickListener(demoClickListener);
-        }
+        hostingAdapter = new RideAdapter(this, hostingRideList, onRideClickListener);
+        hostingRidesRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        hostingRidesRecyclerView.setAdapter(hostingAdapter);
+        hostingRidesRecyclerView.setNestedScrollingEnabled(false);
 
-        if (demoWalkthroughButton != null) {
-            demoWalkthroughButton.setOnClickListener(demoClickListener);
-        }
+        requestAdapter = new RideAdapter(this, requestRideList, onRideClickListener);
+        requestRidesRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        requestRidesRecyclerView.setAdapter(requestAdapter);
+        requestRidesRecyclerView.setNestedScrollingEnabled(false);
     }
+
 
     private void searchRides() {
         firebaseHelper.getRidesRef()
@@ -147,42 +170,48 @@ public class SearchRideActivity extends AppCompatActivity {
                 .addValueEventListener(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
-                        rideList.clear();
+                        hostingRideList.clear();
+                        requestRideList.clear();
+
+                        String currentUserId = prefsHelper.getUserId();
+
                         for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                             Ride ride = snapshot.getValue(Ride.class);
-                            if (ride != null) {
-                                ride.setRideId(snapshot.getKey());
+                            if (ride == null) continue;
 
-                                if (!"hosting".equals(ride.getRideType())) {
-                                    continue;
-                                }
+                            ride.setRideId(snapshot.getKey());
 
-                                boolean matchesFrom = searchFrom == null ||
-                                        ride.getFromLocation().toLowerCase().contains(searchFrom.toLowerCase());
-                                boolean matchesTo = searchTo == null ||
-                                        ride.getToLocation().toLowerCase().contains(searchTo.toLowerCase());
-                                boolean matchesDate = searchDate == null ||
-                                        ride.getDate().equals(searchDate);
+                            // Exclude listings created by the current user (both hosting and requests)
+                            if (currentUserId != null &&
+                                    ride.getDriverId() != null &&
+                                    currentUserId.equals(ride.getDriverId())) {
+                                continue;
+                            }
 
-                                if (matchesFrom && matchesTo && matchesDate) {
-                                    rideList.add(ride);
+                            // Exclude hosting rides with no remaining seats
+                            if ("hosting".equals(ride.getRideType()) &&
+                                    ride.getAvailableSeats() <= 0) {
+                                continue;
+                            }
+
+                            boolean matchesFrom = searchFrom == null ||
+                                    ride.getFromLocation().toLowerCase().contains(searchFrom.toLowerCase());
+                            boolean matchesTo = searchTo == null ||
+                                    ride.getToLocation().toLowerCase().contains(searchTo.toLowerCase());
+                            boolean matchesDate = searchDate == null || searchDate.isEmpty() ||
+                                    ride.getDate().equals(searchDate);
+
+                            if (matchesFrom && matchesTo && matchesDate) {
+                                if ("hosting".equals(ride.getRideType())) {
+                                    hostingRideList.add(ride);
+                                } else if ("request".equals(ride.getRideType())) {
+                                    requestRideList.add(ride);
                                 }
                             }
                         }
 
                         sortRides();
-                        adapter.notifyDataSetChanged();
-
-                        if (rideList.isEmpty()) {
-                            emptyState.setVisibility(View.VISIBLE);
-                            ridesRecyclerView.setVisibility(View.GONE);
-                            if (emptyText != null) {
-                                emptyText.setText("No rides found matching your search");
-                            }
-                        } else {
-                            emptyState.setVisibility(View.GONE);
-                            ridesRecyclerView.setVisibility(View.VISIBLE);
-                        }
+                        updateUI();
                     }
 
                     @Override
@@ -192,25 +221,59 @@ public class SearchRideActivity extends AppCompatActivity {
                 });
     }
 
-    private void sortRides() {
-        if ("Cheapest".equals(currentSortOption)) {
-            Collections.sort(rideList, new Comparator<Ride>() {
-                @Override
-                public int compare(Ride r1, Ride r2) {
-                    return Double.compare(r1.getPricePerSeat(), r2.getPricePerSeat());
-                }
-            });
-        } else if ("Fastest".equals(currentSortOption)) {
-            Collections.sort(rideList, new Comparator<Ride>() {
-                @Override
-                public int compare(Ride r1, Ride r2) {
-                    return r1.getTime().compareTo(r2.getTime());
-                }
-            });
-        }
+    private void updateUI() {
+        hostingAdapter.notifyDataSetChanged();
+        requestAdapter.notifyDataSetChanged();
 
-        if (adapter != null) {
-            adapter.notifyDataSetChanged();
+        boolean hasHosting = !hostingRideList.isEmpty();
+        boolean hasRequests = !requestRideList.isEmpty();
+
+        boolean showHosting = currentFilter == FilterType.ALL || currentFilter == FilterType.HOSTING;
+        boolean showRequests = currentFilter == FilterType.ALL || currentFilter == FilterType.REQUEST;
+
+        boolean hostingVisible = showHosting && hasHosting;
+        boolean requestVisible = showRequests && hasRequests;
+
+        hostingRidesRecyclerView.setVisibility(hostingVisible ? View.VISIBLE : View.GONE);
+        hostingRidesHeader.setVisibility(hostingVisible ? View.VISIBLE : View.GONE);
+        requestRidesRecyclerView.setVisibility(requestVisible ? View.VISIBLE : View.GONE);
+        requestRidesHeader.setVisibility(requestVisible ? View.VISIBLE : View.GONE);
+
+        boolean hasVisibleResults = hostingVisible || requestVisible;
+
+        if (!hasVisibleResults) {
+            emptyState.setVisibility(View.VISIBLE);
+            emptyText.setText(getEmptyMessageForFilter());
+        } else {
+            emptyState.setVisibility(View.GONE);
         }
+    }
+
+    private String getEmptyMessageForFilter() {
+        switch (currentFilter) {
+            case HOSTING:
+                return getString(R.string.empty_available_rides);
+            case REQUEST:
+                return getString(R.string.empty_request_rides);
+            default:
+                return getString(R.string.empty_all_rides);
+        }
+    }
+
+    private void sortRides() {
+        Comparator<Ride> comparator = (r1, r2) -> {
+            if ("Cheapest".equals(currentSortOption)) {
+                return Double.compare(r1.getPricePerSeat(), r2.getPricePerSeat());
+            } else if ("Upcoming".equals(currentSortOption)) {
+                return r1.getTime().compareTo(r2.getTime());
+            }
+            return 0;
+        };
+
+        Collections.sort(hostingRideList, comparator);
+        Collections.sort(requestRideList, comparator);
+
+        hostingAdapter.notifyDataSetChanged();
+        requestAdapter.notifyDataSetChanged();
     }
 }

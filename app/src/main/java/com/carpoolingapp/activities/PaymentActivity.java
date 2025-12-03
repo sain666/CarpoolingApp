@@ -3,15 +3,18 @@ package com.carpoolingapp.activities;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import com.carpoolingapp.R;
 import com.carpoolingapp.models.Booking;
+import com.carpoolingapp.models.Ride;
 import com.carpoolingapp.utils.FirebaseHelper;
 import com.carpoolingapp.utils.SharedPrefsHelper;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.textfield.TextInputEditText;
 
 public class PaymentActivity extends AppCompatActivity {
@@ -22,6 +25,10 @@ public class PaymentActivity extends AppCompatActivity {
 
     private FirebaseHelper firebaseHelper;
     private SharedPrefsHelper prefsHelper;
+    private RadioButton creditRadio;
+    private RadioButton debitRadio;
+    private MaterialCardView creditCard;
+    private MaterialCardView debitCard;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,6 +45,11 @@ public class PaymentActivity extends AppCompatActivity {
     }
 
     private void initViews() {
+        creditRadio = findViewById(R.id.creditCardRadio);
+        debitRadio = findViewById(R.id.debitCardRadio);
+
+        creditCard = findViewById(R.id.creditCardOption);
+        debitCard = findViewById(R.id.debitCardOption);
         cardNumberEditText = findViewById(R.id.cardNumberEditText);
         expiryEditText = findViewById(R.id.expiryEditText);
         cvvEditText = findViewById(R.id.cvvEditText);
@@ -56,11 +68,32 @@ public class PaymentActivity extends AppCompatActivity {
 
     private void setupListeners() {
         makePaymentButton.setOnClickListener(v -> processPayment());
-    }
 
+        View.OnClickListener selectCredit = v -> updatePaymentSelection(true);
+        View.OnClickListener selectDebit = v -> updatePaymentSelection(false);
+
+        creditRadio.setOnClickListener(selectCredit);
+        debitRadio.setOnClickListener(selectDebit);
+        creditCard.setOnClickListener(selectCredit);
+        debitCard.setOnClickListener(selectDebit);
+
+        // Default selection
+        updatePaymentSelection(true);
+    }
     private void loadPaymentInfo() {
         double totalPrice = getIntent().getDoubleExtra("totalPrice", 0.0);
         totalPriceText.setText("$" + String.format("%.2f", totalPrice));
+    }
+
+    private void updatePaymentSelection(boolean creditSelected) {
+        creditRadio.setChecked(creditSelected);
+        debitRadio.setChecked(!creditSelected);
+
+        int activeStroke = getColor(R.color.status_active);
+        int inactiveStroke = getColor(R.color.status_inactive);
+
+        creditCard.setStrokeColor(creditSelected ? activeStroke : inactiveStroke);
+        debitCard.setStrokeColor(!creditSelected ? activeStroke : inactiveStroke);
     }
 
     private void processPayment() {
@@ -111,6 +144,7 @@ public class PaymentActivity extends AppCompatActivity {
         String date = getIntent().getStringExtra("date");
         String time = getIntent().getStringExtra("time");
         double totalPrice = getIntent().getDoubleExtra("totalPrice", 0.0);
+        int seatsBooked = getIntent().getIntExtra("seatsBooked", 1);
         String driverId = getIntent().getStringExtra("driverId");
         String driverName = getIntent().getStringExtra("driverName");
 
@@ -130,7 +164,7 @@ public class PaymentActivity extends AppCompatActivity {
                 to != null ? to : "Unknown",
                 date != null ? date : "TBD",
                 time != null ? time : "TBD",
-                1, // seats booked
+                seatsBooked, // seats booked
                 totalPrice,
                 "Credit Card"
         );
@@ -141,7 +175,8 @@ public class PaymentActivity extends AppCompatActivity {
             booking.setBookingId(bookingId);
             firebaseHelper.getBookingRef(bookingId).setValue(booking)
                     .addOnSuccessListener(aVoid -> {
-                        // Booking saved successfully
+                        // Booking saved successfully – update ride seats
+                        updateRideSeats(rideId, seatsBooked);
                     })
                     .addOnFailureListener(e -> {
                         Toast.makeText(PaymentActivity.this,
@@ -149,5 +184,28 @@ public class PaymentActivity extends AppCompatActivity {
                                 Toast.LENGTH_SHORT).show();
                     });
         }
+    }
+
+    private void updateRideSeats(String rideId, int seatsBooked) {
+        if (rideId == null || seatsBooked <= 0) return;
+
+        firebaseHelper.getRideRef(rideId).addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+            @Override
+            public void onDataChange(com.google.firebase.database.DataSnapshot dataSnapshot) {
+                Ride ride = dataSnapshot.getValue(Ride.class);
+                if (ride == null) return;
+
+                int available = ride.getAvailableSeats();
+                available = Math.max(0, available - seatsBooked);
+                ride.setAvailableSeats(available);
+
+                firebaseHelper.getRideRef(rideId).setValue(ride);
+            }
+
+            @Override
+            public void onCancelled(com.google.firebase.database.DatabaseError databaseError) {
+                // Ignore seat update failures for now
+            }
+        });
     }
 }
