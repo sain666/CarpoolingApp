@@ -7,11 +7,13 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+
 import com.carpoolingapp.R;
 import com.google.android.material.button.MaterialButton;
+
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
@@ -42,7 +44,7 @@ public class SearchFormActivity extends AppCompatActivity {
         dateText = findViewById(R.id.dateText);
         searchButton = findViewById(R.id.searchButton);
         dateLayout = findViewById(R.id.dateLayout);
-        swapButton = findViewById(R.id.imageView4);
+        swapButton = findViewById(R.id.swapButton);
     }
 
     private void setupToolbar() {
@@ -62,23 +64,18 @@ public class SearchFormActivity extends AppCompatActivity {
         // Search button
         searchButton.setOnClickListener(v -> performSearch());
 
-        // Swap button - FIXED!
+        // Swap button
         if (swapButton != null) {
             swapButton.setOnClickListener(v -> swapLocations());
         }
     }
 
     private void swapLocations() {
-        // Get current values
         String fromText = fromEditText.getText().toString().trim();
         String toText = toEditText.getText().toString().trim();
 
-        // Swap them
         fromEditText.setText(toText);
         toEditText.setText(fromText);
-
-        // Show feedback
-        Toast.makeText(this, "Locations swapped!", Toast.LENGTH_SHORT).show();
     }
 
     private void showDatePicker() {
@@ -110,10 +107,6 @@ public class SearchFormActivity extends AppCompatActivity {
         }
         if (to.isEmpty()) {
             toEditText.setError("Required");
-            return;
-        }
-        if (selectedDate.isEmpty()) {
-            Toast.makeText(this, "Please select a date", Toast.LENGTH_SHORT).show();
             return;
         }
 

@@ -31,7 +31,6 @@
             android:layout_marginLeft="30dp"
             android:layout_marginRight="30dp"
             android:orientation="vertical">
-
             <!-- Credit Card Option -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/creditCardOption"
@@ -106,7 +105,6 @@
                 </LinearLayout>
 
             </com.google.android.material.card.MaterialCardView>
-
             <!-- Card Information -->
 
             <TextView

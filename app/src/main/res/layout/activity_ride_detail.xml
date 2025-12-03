@@ -100,10 +100,21 @@
                             app:tint="@color/status_warning" />
 
                         <TextView
+                            android:id="@+id/ratingText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:text="4.5"
+                            android:textColor="@color/text_primary"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/numRidesText"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="4dp"
-                            android:text="4.8 (25 rides)"
+                            android:text="(20 rides)"
                             android:textColor="@color/text_secondary"
                             android:textSize="14sp" />
 

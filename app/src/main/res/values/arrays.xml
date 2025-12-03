@@ -2,6 +2,12 @@
 <resources>
     <string-array name="sort_options">
         <item>Cheapest</item>
-        <item>Fastest</item>
+        <item>Upcoming</item>
+    </string-array>
+
+    <string-array name="ride_filter_options">
+        <item>@string/filter_option_all</item>
+        <item>@string/filter_option_available</item>
+        <item>@string/filter_option_requests</item>
     </string-array>
 </resources>

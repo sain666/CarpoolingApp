@@ -5,13 +5,13 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import com.carpoolingapp.R;
-import com.carpoolingapp.adapters.BookingAdapter;
 import com.carpoolingapp.adapters.RideAdapter;
-import com.carpoolingapp.models.Booking;
+import com.carpoolingapp.adapters.RideRequestAdapter;
 import com.carpoolingapp.models.Ride;
 import com.carpoolingapp.utils.FirebaseHelper;
 import com.carpoolingapp.utils.SharedPrefsHelper;
@@ -20,13 +20,20 @@ import com.google.android.material.button.MaterialButton;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.ValueEventListener;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collections;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class HomeActivity extends AppCompatActivity {
 
     private TextView userNameText;
-    private MaterialButton myBookingsButton, myListingsButton;
+    private MaterialButton myActiveListingsButton, myRideRequestsButton;
     private RecyclerView recyclerView;
     private View emptyState, searchCard;
     private BottomNavigationView bottomNav;
@@ -34,11 +41,15 @@ public class HomeActivity extends AppCompatActivity {
     private FirebaseHelper firebaseHelper;
     private SharedPrefsHelper prefsHelper;
     private RideAdapter rideAdapter;
-    private BookingAdapter bookingAdapter;
-    private List<Ride> rideList;
-    private List<Booking> bookingList;
+    private RideRequestAdapter rideRequestAdapter;
+    private List<Ride> activeListingsList;
+    private List<Ride> rideRequestsList;
+    private List<Ride> hostedRidesList = new ArrayList<>();
+    private List<Ride> bookedRidesList = new ArrayList<>();
 
-    private boolean isBookingsMode = true; // true = My Bookings, false = My Listings
+    private boolean isListingsMode = true; // true = My Active Listings, false = My Ride Requests
+    private static final List<String> DATE_PATTERNS = Arrays.asList("MMM dd, yyyy", "yyyy-MM-dd", "dd/MM/yyyy");
+    private static final List<String> TIME_PATTERNS = Arrays.asList("hh:mm a", "HH:mm", "HH:mm:ss");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,12 +63,13 @@ public class HomeActivity extends AppCompatActivity {
         loadUserData();
         setupRecyclerView();
         loadData();
+        updateModeUI();
     }
 
     private void initViews() {
         userNameText = findViewById(R.id.userNameText);
-        myBookingsButton = findViewById(R.id.myBookingsButton);
-        myListingsButton = findViewById(R.id.myListingsButton);
+        myActiveListingsButton = findViewById(R.id.myActiveListingsButton);
+        myRideRequestsButton = findViewById(R.id.myRideRequestsButton);
         recyclerView = findViewById(R.id.recyclerView);
         bottomNav = findViewById(R.id.bottomNav);
         searchCard = findViewById(R.id.searchView);
@@ -70,31 +82,19 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void setupListeners() {
-        if (myBookingsButton != null) {
-            myBookingsButton.setOnClickListener(v -> switchToBookingsMode());
-        }
+        myActiveListingsButton.setOnClickListener(v -> setActiveListingsMode());
+        myRideRequestsButton.setOnClickListener(v -> setRideRequestsMode());
 
-        if (myListingsButton != null) {
-            myListingsButton.setOnClickListener(v -> switchToListingsMode());
-        }
+        searchCard.setOnClickListener(v -> {
+            Intent intent = new Intent(HomeActivity.this, SearchFormActivity.class);
+            startActivity(intent);
+        });
 
-        if (searchCard != null) {
-            searchCard.setOnClickListener(v -> {
-                Intent intent = new Intent(HomeActivity.this, SearchFormActivity.class);
-                startActivity(intent);
-            });
-        }
-
-        View profileImage = findViewById(R.id.profileImage);
-        if (profileImage != null) {
-            profileImage.setOnClickListener(v ->
-                    startActivity(new Intent(HomeActivity.this, ProfileActivity.class)));
-        }
+        findViewById(R.id.profileImage).setOnClickListener(v ->
+                startActivity(new Intent(HomeActivity.this, ProfileActivity.class)));
     }
 
     private void setupBottomNav() {
-        if (bottomNav == null) return;
-
         bottomNav.setSelectedItemId(R.id.nav_home);
         bottomNav.setOnItemSelectedListener(item -> {
             int itemId = item.getItemId();
@@ -115,59 +115,51 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void loadUserData() {
-        if (userNameText != null) {
-            String userName = prefsHelper.getUserName();
-            userNameText.setText(userName);
-        }
+        userNameText.setText(prefsHelper.getUserName());
     }
 
     private void setupRecyclerView() {
-        if (recyclerView == null) return;
+        activeListingsList = new ArrayList<>();
+        rideRequestsList = new ArrayList<>();
 
-        // Setup for both adapters
-        rideList = new ArrayList<>();
-        bookingList = new ArrayList<>();
+        rideAdapter = new RideAdapter(this, activeListingsList, ride -> {
+            Intent intent = new Intent(this, RideDetailActivity.class);
+            intent.putExtra("rideId", ride.getRideId());
+            startActivity(intent);
+        });
 
-        // Ride adapter for "My Listings"
-        rideAdapter = new RideAdapter(this, rideList, ride ->
-                Toast.makeText(HomeActivity.this,
-                        "Ride: " + ride.getFromLocation() + " to " + ride.getToLocation(),
-                        Toast.LENGTH_SHORT).show());
-
-        // Booking adapter for "My Bookings"
-        bookingAdapter = new BookingAdapter(this, bookingList, booking ->
-                Toast.makeText(HomeActivity.this,
-                        "Booking: " + booking.getFromLocation() + " to " + booking.getToLocation(),
-                        Toast.LENGTH_SHORT).show());
+        rideRequestAdapter = new RideRequestAdapter(this, rideRequestsList, ride -> {
+            Intent intent = new Intent(this, RideDetailActivity.class);
+            intent.putExtra("rideId", ride.getRideId());
+            startActivity(intent);
+        });
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
     }
 
-    private void switchToBookingsMode() {
-        isBookingsMode = true;
+    private void setActiveListingsMode() {
+        isListingsMode = true;
         updateModeUI();
         loadData();
     }
 
-    private void switchToListingsMode() {
-        isBookingsMode = false;
+    private void setRideRequestsMode() {
+        isListingsMode = false;
         updateModeUI();
         loadData();
     }
 
     private void updateModeUI() {
-        if (myBookingsButton != null && myListingsButton != null) {
-            if (isBookingsMode) {
-                myBookingsButton.setBackgroundTintList(getColorStateList(R.color.status_active));
-                myBookingsButton.setTextColor(getColor(R.color.white));
-                myListingsButton.setBackgroundTintList(null);
-                myListingsButton.setTextColor(getColor(R.color.primary_blue));
-            } else {
-                myListingsButton.setBackgroundTintList(getColorStateList(R.color.status_active));
-                myListingsButton.setTextColor(getColor(R.color.white));
-                myBookingsButton.setBackgroundTintList(null);
-                myBookingsButton.setTextColor(getColor(R.color.primary_blue));
-            }
+        if (isListingsMode) {
+            myActiveListingsButton.setBackgroundTintList(getColorStateList(R.color.status_active));
+            myActiveListingsButton.setTextColor(getColor(R.color.white));
+            myRideRequestsButton.setBackgroundTintList(getColorStateList(R.color.status_inactive));
+            myRideRequestsButton.setTextColor(getColor(R.color.primary_blue));
+        } else {
+            myRideRequestsButton.setBackgroundTintList(getColorStateList(R.color.status_active));
+            myRideRequestsButton.setTextColor(getColor(R.color.white));
+            myActiveListingsButton.setBackgroundTintList(getColorStateList(R.color.status_inactive));
+            myActiveListingsButton.setTextColor(getColor(R.color.primary_blue));
         }
     }
 
@@ -175,97 +167,245 @@ public class HomeActivity extends AppCompatActivity {
         String userId = prefsHelper.getUserId();
         if (userId == null) return;
 
-        if (isBookingsMode) {
-            loadMyBookings(userId);
+        if (isListingsMode) {
+            loadMyActiveListings(userId);
         } else {
-            loadMyListings(userId);
+            loadMyRideRequests(userId);
         }
     }
 
-    private void loadMyBookings(String userId) {
-        // Switch to booking adapter
-        if (recyclerView != null) {
-            recyclerView.setAdapter(bookingAdapter);
-        }
+    private void loadMyActiveListings(String userId) {
+        recyclerView.setAdapter(rideAdapter);
 
-        // Load bookings where current user is the rider
-        firebaseHelper.getBookingsRef()
-                .orderByChild("riderId")
-                .equalTo(userId)
-                .addValueEventListener(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        bookingList.clear();
-                        for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                            Booking booking = snapshot.getValue(Booking.class);
-                            if (booking != null) {
-                                booking.setBookingId(snapshot.getKey());
-                                bookingList.add(booking);
-                            }
-                        }
-
-                        bookingAdapter.notifyDataSetChanged();
-                        updateEmptyState(bookingList.isEmpty());
-                    }
-
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-                        Toast.makeText(HomeActivity.this, "Failed to load bookings", Toast.LENGTH_SHORT).show();
-                    }
-                });
-    }
-
-    private void loadMyListings(String userId) {
-        // Switch to ride adapter
-        if (recyclerView != null) {
-            recyclerView.setAdapter(rideAdapter);
-        }
-
-        // Load rides where current user is hosting (rideType = "hosting")
+        // Load rides the user is hosting
         firebaseHelper.getRidesRef()
                 .orderByChild("driverId")
                 .equalTo(userId)
                 .addValueEventListener(new ValueEventListener() {
                     @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        rideList.clear();
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        hostedRidesList.clear();
                         for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                             Ride ride = snapshot.getValue(Ride.class);
                             if (ride != null && "hosting".equals(ride.getRideType())) {
                                 ride.setRideId(snapshot.getKey());
-                                rideList.add(ride);
+                                hostedRidesList.add(ride);
                             }
                         }
-
-                        rideAdapter.notifyDataSetChanged();
-                        updateEmptyState(rideList.isEmpty());
+                        combineAndDisplayActiveListings();
                     }
 
                     @Override
-                    public void onCancelled(DatabaseError databaseError) {
-                        Toast.makeText(HomeActivity.this, "Failed to load listings", Toast.LENGTH_SHORT).show();
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+                        Toast.makeText(HomeActivity.this, "Failed to load hosted rides", Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+        // Load rides the user has booked (where the current user is the rider)
+        // Bookings are stored with a "riderId" field in Booking.java, so we must query by "riderId"
+        firebaseHelper.getBookingsRef().orderByChild("riderId").equalTo(userId)
+                .addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        List<String> rideIds = new ArrayList<>();
+                        for (DataSnapshot bookingSnapshot : dataSnapshot.getChildren()) {
+                            String rideId = bookingSnapshot.child("rideId").getValue(String.class);
+                            if (rideId != null) {
+                                rideIds.add(rideId);
+                            }
+                        }
+                        fetchBookedRides(rideIds);
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+                        Toast.makeText(HomeActivity.this, "Failed to load booked rides", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
+    private void fetchBookedRides(List<String> rideIds) {
+        bookedRidesList.clear();
+        if (rideIds.isEmpty()) {
+            combineAndDisplayActiveListings();
+            return;
+        }
+
+        final int[] ridesToFetch = {rideIds.size()};
+
+        for (String rideId : rideIds) {
+            firebaseHelper.getRideRef(rideId).addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot rideSnapshot) {
+                    if (rideSnapshot.exists()) {
+                        Ride ride = rideSnapshot.getValue(Ride.class);
+                        if (ride != null) {
+                            ride.setRideId(rideSnapshot.getKey());
+                            bookedRidesList.add(ride);
+                        }
+                    }
+                    ridesToFetch[0]--;
+                    if (ridesToFetch[0] == 0) {
+                        combineAndDisplayActiveListings();
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+                    ridesToFetch[0]--;
+                    if (ridesToFetch[0] == 0) {
+                        combineAndDisplayActiveListings();
+                    }
+                    Toast.makeText(HomeActivity.this, "Failed to load a booked ride", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+    }
+
+    private void combineAndDisplayActiveListings() {
+        activeListingsList.clear();
+        activeListingsList.addAll(hostedRidesList);
+
+        for (Ride bookedRide : bookedRidesList) {
+            if (!isRideInList(activeListingsList, bookedRide.getRideId())) {
+                activeListingsList.add(bookedRide);
+            }
+        }
+
+        // sort by earliest
+        Collections.sort(activeListingsList, (ride1, ride2) ->
+                Long.compare(getRideTimestamp(ride1), getRideTimestamp(ride2)));
+
+        rideAdapter.notifyDataSetChanged();
+        updateEmptyState(activeListingsList.isEmpty());
+    }
+
+    private boolean isRideInList(List<Ride> list, String rideId) {
+        for (Ride ride : list) {
+            if (ride.getRideId().equals(rideId)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private long getRideTimestamp(Ride ride) {
+        if (ride == null) {
+            return Long.MIN_VALUE;
+        }
+
+        long parsedTimestamp = parseScheduledTimestamp(ride.getDate(), ride.getTime());
+        if (parsedTimestamp != Long.MIN_VALUE) {
+            return parsedTimestamp;
+        }
+
+        if (ride.getCreatedAt() > 0) {
+            return ride.getCreatedAt();
+        }
+
+        if (ride.getUpdatedAt() > 0) {
+            return ride.getUpdatedAt();
+        }
+
+        return Long.MIN_VALUE;
+    }
+
+    private long parseScheduledTimestamp(String dateValue, String timeValue) {
+        if (dateValue == null || dateValue.trim().isEmpty()) {
+            return Long.MIN_VALUE;
+        }
+
+        for (String datePattern : DATE_PATTERNS) {
+            SimpleDateFormat dateFormat = new SimpleDateFormat(datePattern, Locale.getDefault());
+            dateFormat.setLenient(false);
+            try {
+                Date parsedDate = dateFormat.parse(dateValue);
+                if (parsedDate == null) continue;
+
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTime(parsedDate);
+                boolean timeApplied = applyTime(calendar, timeValue);
+                if (!timeApplied) {
+                    calendar.set(Calendar.HOUR_OF_DAY, 0);
+                    calendar.set(Calendar.MINUTE, 0);
+                    calendar.set(Calendar.SECOND, 0);
+                    calendar.set(Calendar.MILLISECOND, 0);
+                }
+                return calendar.getTimeInMillis();
+            } catch (ParseException ignored) {
+            }
+        }
+
+        return Long.MIN_VALUE;
+    }
+
+    private boolean applyTime(Calendar calendar, String timeValue) {
+        if (timeValue == null || timeValue.trim().isEmpty()) {
+            return false;
+        }
+
+        for (String timePattern : TIME_PATTERNS) {
+            SimpleDateFormat timeFormat = new SimpleDateFormat(timePattern, Locale.getDefault());
+            timeFormat.setLenient(false);
+            try {
+                Date parsedTime = timeFormat.parse(timeValue);
+                if (parsedTime == null) continue;
+
+                Calendar timeCal = Calendar.getInstance();
+                timeCal.setTime(parsedTime);
+                calendar.set(Calendar.HOUR_OF_DAY, timeCal.get(Calendar.HOUR_OF_DAY));
+                calendar.set(Calendar.MINUTE, timeCal.get(Calendar.MINUTE));
+                calendar.set(Calendar.SECOND, timeCal.get(Calendar.SECOND));
+                calendar.set(Calendar.MILLISECOND, 0);
+                return true;
+            } catch (ParseException ignored) {
+            }
+        }
+        return false;
+    }
+
+    private void loadMyRideRequests(String userId) {
+        recyclerView.setAdapter(rideRequestAdapter);
+
+        firebaseHelper.getRidesRef()
+                .orderByChild("driverId")
+                .equalTo(userId)
+                .addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        rideRequestsList.clear();
+                        for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                            Ride ride = snapshot.getValue(Ride.class);
+                            if (ride != null && "request".equals(ride.getRideType())) {
+                                ride.setRideId(snapshot.getKey());
+                                rideRequestsList.add(ride);
+                            }
+                        }
+                        rideRequestAdapter.notifyDataSetChanged();
+                        updateEmptyState(rideRequestsList.isEmpty());
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+                        Toast.makeText(HomeActivity.this, "Failed to load ride requests", Toast.LENGTH_SHORT).show();
                     }
                 });
     }
 
     private void updateEmptyState(boolean isEmpty) {
-        if (emptyState != null && recyclerView != null) {
-            if (isEmpty) {
-                emptyState.setVisibility(View.VISIBLE);
-                recyclerView.setVisibility(View.GONE);
-            } else {
-                emptyState.setVisibility(View.GONE);
-                recyclerView.setVisibility(View.VISIBLE);
-            }
+        if (isEmpty) {
+            emptyState.setVisibility(View.VISIBLE);
+            recyclerView.setVisibility(View.GONE);
+        } else {
+            emptyState.setVisibility(View.GONE);
+            recyclerView.setVisibility(View.VISIBLE);
         }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        if (bottomNav != null) {
-            bottomNav.setSelectedItemId(R.id.nav_home);
-        }
+        bottomNav.setSelectedItemId(R.id.nav_home);
         loadData();
     }
 }

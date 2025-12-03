@@ -128,11 +128,7 @@ public class CreateRideActivity extends AppCompatActivity {
         createRideButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (isHostingRide) {
-                    createRide();
-                } else {
-                    searchRides();
-                }
+                createRide();
             }
         });
     }
@@ -149,7 +145,7 @@ public class CreateRideActivity extends AppCompatActivity {
             lookingForRideButton.setTextColor(getColor(R.color.white));
             hostingRideButton.setBackgroundTintList(getColorStateList(R.color.status_inactive));
             hostingRideButton.setTextColor(getColor(R.color.primary_blue));
-            createRideButton.setText("Search Rides");
+            createRideButton.setText("Create Request");
         }
     }
 
@@ -299,7 +295,7 @@ public class CreateRideActivity extends AppCompatActivity {
         String userId = prefsHelper.getUserId();
         String userName = prefsHelper.getUserName();
 
-        String rideType = isHostingRide ? "hosting" : "looking";
+        String rideType = isHostingRide ? "hosting" : "request";
         Ride ride = new Ride(
                 userId, userName, from, to,
                 0.0, 0.0, 0.0, 0.0,
@@ -313,33 +309,22 @@ public class CreateRideActivity extends AppCompatActivity {
         ride.setAllowsSnowboards(snowboardsCheckBox.isChecked());
 
         createRideButton.setEnabled(false);
-        createRideButton.setText("Creating...");
+        createRideButton.setText(isHostingRide ? "Creating..." : "Creating Request...");
 
         String rideId = firebaseHelper.getRidesRef().push().getKey();
         if (rideId != null) {
-            ride.setRideId(rideId);
             firebaseHelper.getRideRef(rideId).setValue(ride)
-                    .addOnSuccessListener(aVoid -> {
-                        Toast.makeText(CreateRideActivity.this, "Ride created successfully!", Toast.LENGTH_SHORT).show();
-
-                        Intent intent = new Intent(CreateRideActivity.this, RideConfirmationActivity.class);
-                        intent.putExtra("confirmationType", "ride_created");
-                        startActivity(intent);
-                        finish();
-                    })
-                    .addOnFailureListener(e -> {
-                        createRideButton.setEnabled(true);
-                        createRideButton.setText("Create Ride");
-                        Toast.makeText(CreateRideActivity.this, "Failed to create ride: " + e.getMessage(), Toast.LENGTH_SHORT).show();
-                    });
-        }
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (bottomNav != null) {
-            bottomNav.setSelectedItemId(R.id.nav_create);
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(CreateRideActivity.this,
+                            isHostingRide ? "Ride created successfully" : "Request created successfully",
+                            Toast.LENGTH_SHORT).show();
+                    finish();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(CreateRideActivity.this, "Failed to create.", Toast.LENGTH_SHORT).show();
+                    createRideButton.setEnabled(true);
+                    createRideButton.setText(isHostingRide ? "Create Ride" : "Create Request");
+                });
         }
     }
 }

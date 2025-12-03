@@ -24,9 +24,17 @@
     <string name="already_have_account">Already have an account? Login</string>
 
     <!-- Home -->
-    <string name="your_bookings">My Bookings</string>
-    <string name="your_listings">My Listings</string>
+    <string name="upcoming_trips">Upcoming Trips</string>
+    <string name="requested_rides">Requested Rides</string>
     <string name="where_to">Where to?</string>
+    <string name="sorted_by_label">Sorted by</string>
+    <string name="filtered_by_label">Filtered by</string>
+    <string name="filter_option_all">All listings</string>
+    <string name="filter_option_available">Available rides</string>
+    <string name="filter_option_requests">Ride requests</string>
+    <string name="empty_available_rides">No available rides match your filter</string>
+    <string name="empty_request_rides">No ride requests match your filter</string>
+    <string name="empty_all_rides">No rides or requests found matching your search</string>
 
     <!-- Ride Creation -->
     <string name="create_your_ride">Create your ride</string>

@@ -3,6 +3,7 @@ package com.carpoolingapp.activities;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
@@ -12,6 +13,7 @@ import com.carpoolingapp.models.Booking;
 import com.carpoolingapp.utils.FirebaseHelper;
 import com.carpoolingapp.utils.SharedPrefsHelper;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.textfield.TextInputEditText;
 
 public class PaymentActivity extends AppCompatActivity {
@@ -22,6 +24,10 @@ public class PaymentActivity extends AppCompatActivity {
 
     private FirebaseHelper firebaseHelper;
     private SharedPrefsHelper prefsHelper;
+    private RadioButton creditRadio;
+    private RadioButton debitRadio;
+    private MaterialCardView creditCard;
+    private MaterialCardView debitCard;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,6 +44,11 @@ public class PaymentActivity extends AppCompatActivity {
     }
 
     private void initViews() {
+        creditRadio = findViewById(R.id.creditCardRadio);
+        debitRadio = findViewById(R.id.debitCardRadio);
+
+        creditCard = findViewById(R.id.creditCardOption);
+        debitCard = findViewById(R.id.debitCardOption);
         cardNumberEditText = findViewById(R.id.cardNumberEditText);
         expiryEditText = findViewById(R.id.expiryEditText);
         cvvEditText = findViewById(R.id.cvvEditText);
@@ -56,8 +67,21 @@ public class PaymentActivity extends AppCompatActivity {
 
     private void setupListeners() {
         makePaymentButton.setOnClickListener(v -> processPayment());
+        creditRadio.setOnClickListener(v -> {
+            debitRadio.setChecked(false);
+        });
+        debitRadio.setOnClickListener(v -> {
+            creditRadio.setChecked(false);
+        });
+        creditCard.setOnClickListener(v -> {
+            creditRadio.setChecked(true);
+            debitRadio.setChecked(false);
+        });
+        debitCard.setOnClickListener(v -> {
+            debitRadio.setChecked(true);
+            creditRadio.setChecked(false);
+        });
     }
-
     private void loadPaymentInfo() {
         double totalPrice = getIntent().getDoubleExtra("totalPrice", 0.0);
         totalPriceText.setText("$" + String.format("%.2f", totalPrice));
