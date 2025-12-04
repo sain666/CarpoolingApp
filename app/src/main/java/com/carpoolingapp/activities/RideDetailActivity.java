@@ -301,6 +301,7 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
                 } else {
                     bookNowButton.setText("Book Now");
                 }
+
             } else {
                 bookNowButton.setText("Book Now");
             }
@@ -543,7 +544,6 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
 
     private void updateSeatsDisplay() {
         if (seatsText == null || currentRide == null) return;
-
         if (isManageMode && "driver_manage".equals(mode)) {
             if ("request".equals(currentRide.getRideType())) {
                 // Managing own request
@@ -568,11 +568,20 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
             }
         } else {
             // Normal display
-            if (seatsLabelText != null) {
-                seatsLabelText.setText("Available");
+            if ("request".equals(currentRide.getRideType())) {
+                // Managing own request
+                if (seatsLabelText != null) {
+                    seatsLabelText.setText("Requested");
+                }
+                seatsText.setText(currentRide.getAvailableSeats() + " seats requested");
+                seatsText.setClickable(false);
+            } else {
+                if (seatsLabelText != null) {
+                    seatsLabelText.setText("Available");
+                }
+                seatsText.setText(currentRide.getAvailableSeats() + " seats available");
+                seatsText.setClickable(false);
             }
-            seatsText.setText(currentRide.getAvailableSeats() + " seats available");
-            seatsText.setClickable(false);
         }
     }
 
@@ -595,7 +604,10 @@ public class RideDetailActivity extends AppCompatActivity implements OnMapReadyC
             @Override
             public void onMessageClick(Booking booking) {
                 // Dummy for now
-                Toast.makeText(RideDetailActivity.this, "Messaging feature coming soon", Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(RideDetailActivity.this, ChatActivity.class);
+                intent.putExtra("isDemo", true);
+                intent.putExtra("otherUserName", booking.getRiderName());
+                startActivity(intent);
             }
 
             @Override
