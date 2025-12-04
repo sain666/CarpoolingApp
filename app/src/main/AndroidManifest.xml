@@ -101,6 +101,10 @@
             android:name=".activities.RideDetailActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".activities.ReceiptActivity"
+            android:exported="false" />
+
 
     </application>
 

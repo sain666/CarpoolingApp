@@ -90,4 +90,17 @@ public class FirebaseHelper {
         void onSuccess();
         void onFailure();
     }
+
+    // Receipt methods
+    public DatabaseReference getReceiptsRef() {
+        return FirebaseDatabase.getInstance().getReference("receipts");
+    }
+
+    public DatabaseReference getReceiptRef(String receiptId) {
+        return getReceiptsRef().child(receiptId);
+    }
+
+    public DatabaseReference getUserReceiptsRef(String userId) {
+        return FirebaseDatabase.getInstance().getReference("user_receipts").child(userId);
+    }
 }

@@ -108,32 +108,67 @@ public class PaymentActivity extends AppCompatActivity {
             return;
         }
 
-        if (!isDemo && cardNumber.length() < 13) {
-            Toast.makeText(this, "Invalid card number", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
+        // Simulate payment processing
         makePaymentButton.setEnabled(false);
         makePaymentButton.setText("Processing...");
 
-        // Create booking in Firebase
-        createBooking();
+        // Simulate success after delay
+        makePaymentButton.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(PaymentActivity.this, "Payment successful!", Toast.LENGTH_SHORT).show();
 
-        makePaymentButton.postDelayed(() -> {
-            Toast.makeText(PaymentActivity.this, "Payment successful!", Toast.LENGTH_SHORT).show();
+                // Get payment details from intent
+                String rideId = getIntent().getStringExtra("rideId");
+                String driverId = getIntent().getStringExtra("driverId");
+                String driverName = getIntent().getStringExtra("driverName");
+                String fromLocation = getIntent().getStringExtra("fromLocation");
+                String toLocation = getIntent().getStringExtra("toLocation");
+                String date = getIntent().getStringExtra("date");
+                String time = getIntent().getStringExtra("time");
+                int seats = getIntent().getIntExtra("seats", 1);
+                double pricePerSeat = getIntent().getDoubleExtra("pricePerSeat", 0.0);
+                double totalAmount = getIntent().getDoubleExtra("totalPrice", 0.0);
 
-            // Go to chat
-            Intent intent = new Intent(PaymentActivity.this, ChatActivity.class);
-            intent.putExtra("isDemo", isDemo);
-            intent.putExtra("rideId", getIntent().getStringExtra("rideId"));
-            intent.putExtra("from", getIntent().getStringExtra("from"));
-            intent.putExtra("to", getIntent().getStringExtra("to"));
-            intent.putExtra("date", getIntent().getStringExtra("date"));
-            intent.putExtra("time", getIntent().getStringExtra("time"));
-            intent.putExtra("otherUserName", getIntent().getStringExtra("driverName"));
-
-            startActivity(intent);
-            finish();
+                if (isDemo) {
+                    // Demo flow: Show receipt then go to chat
+                    Intent intent = new Intent(PaymentActivity.this, ReceiptActivity.class);
+                    intent.putExtra("bookingId", "DEMO123");
+                    intent.putExtra("rideId", rideId);
+                    intent.putExtra("riderName", "Demo Rider");
+                    intent.putExtra("riderEmail", "rider@demo.com");
+                    intent.putExtra("driverName", driverName != null ? driverName : "Demo Driver");
+                    intent.putExtra("driverEmail", "driver@demo.com");
+                    intent.putExtra("fromLocation", fromLocation != null ? fromLocation : "Downtown Vancouver");
+                    intent.putExtra("toLocation", toLocation != null ? toLocation : "Surrey Central");
+                    intent.putExtra("date", date != null ? date : "Dec 15, 2024");
+                    intent.putExtra("time", time != null ? time : "10:00 AM");
+                    intent.putExtra("seats", seats);
+                    intent.putExtra("pricePerSeat", pricePerSeat);
+                    intent.putExtra("totalAmount", totalAmount);
+                    intent.putExtra("paymentMethod", "Demo Payment");
+                    intent.putExtra("isDemo", true);
+                    startActivity(intent);
+                    finish();
+                } else {
+                    // Normal flow: Create receipt and show it
+                    // TODO: Save receipt to Firebase
+                    Intent intent = new Intent(PaymentActivity.this, ReceiptActivity.class);
+                    intent.putExtra("rideId", rideId);
+                    intent.putExtra("driverId", driverId);
+                    intent.putExtra("driverName", driverName);
+                    intent.putExtra("fromLocation", fromLocation);
+                    intent.putExtra("toLocation", toLocation);
+                    intent.putExtra("date", date);
+                    intent.putExtra("time", time);
+                    intent.putExtra("seats", seats);
+                    intent.putExtra("pricePerSeat", pricePerSeat);
+                    intent.putExtra("totalAmount", totalAmount);
+                    intent.putExtra("paymentMethod", "Credit Card");
+                    startActivity(intent);
+                    finish();
+                }
+            }
         }, 2000);
     }
 
