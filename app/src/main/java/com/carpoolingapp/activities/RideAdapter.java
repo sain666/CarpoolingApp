@@ -50,7 +50,7 @@ public class RideAdapter extends RecyclerView.Adapter<RideAdapter.RideViewHolder
         // Set tag color and text based on ride type
         if ("request".equals(ride.getRideType()) || "looking".equals(ride.getRideType())) {
             // Green tag for ride requests
-            holder.rideTypeTag.setText("LOOKING");
+            holder.rideTypeTag.setText("REQUEST");
             holder.rideTypeTag.setBackgroundResource(R.drawable.bg_tag_request);
         } else if ("hosting".equals(ride.getRideType())) {
             // Orange tag for hosting rides

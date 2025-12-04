@@ -413,9 +413,9 @@ public class CreateRideActivity extends AppCompatActivity {
             ride.setAvailableSeats(seats);
             ride.setPricePerSeat(price);
             ride.setRideType(rideType);
-
+            ride.setStatus("active");
             ride.setCreatedAt(System.currentTimeMillis());
-
+            ride.setUpdatedAt(System.currentTimeMillis());
 
             // NEW: Set amenities
             ride.setAllowsLuggage(luggageCheckBox.isChecked());
