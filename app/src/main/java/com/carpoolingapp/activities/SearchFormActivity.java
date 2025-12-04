@@ -52,7 +52,7 @@ public class SearchFormActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            getSupportActionBar().setTitle("Plan your ride");
+            getSupportActionBar().setTitle("Find your ride");
         }
         toolbar.setNavigationOnClickListener(v -> finish());
     }
